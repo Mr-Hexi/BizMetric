@@ -1,5 +1,5 @@
 
-# ⚠️ Welcome — Assignment Repository
+# Welcome — Assignment Repository
 
 Hi, I'm **Abu Huzaifa Ansari** 👋  
 Welcome to this repository. This repo contains a collection of my Python assignments, practice exercises, and mini‑projects completed as part of my learning journey.
