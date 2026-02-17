@@ -2,11 +2,13 @@
 # 📘 Python Assignment Repository
 
 This repository contains all the Python relation programs, exercises and Project I've completed.
+
 ---
 # 📝 Files Description
 
 ## 📓 Python_Assignment.ipynb
 This notebook contains the solution for the Assignments given by the Trainer.
+
 ---
 
 ## 🍽️ FoodOrdering.py — Mini Project
