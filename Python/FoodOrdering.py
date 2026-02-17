@@ -4,6 +4,12 @@ from datetime import datetime
 from datetime import datetime
 class Menu:
     
+    '''
+    Docstring for Menu
+    
+    '''
+    
+    
     def __init__(self):
         try:
             cnxn = pyodbc.connect("Driver={SQL Server};"
