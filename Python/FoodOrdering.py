@@ -8,8 +8,7 @@ class Menu:
     Docstring for Menu
     
     '''
-    
-    
+
     def __init__(self):
         try:
             cnxn = pyodbc.connect("Driver={SQL Server};"
@@ -44,11 +43,11 @@ class Foodies(Menu):
     
     def __init__(self):
         super().__init__()
-        self.orderID = datetime.timestamp(datetime.now())
+        self.orderID = str(datetime.timestamp(datetime.now())).split(".")[0]
         self.orders = {}
         self.total_cost = 0
     def take_order(self):
-        print(f"\n USER ID: {str(self.orderID)[-5:-1]}")
+        print(f"\n USER ID: {self.orderID}")
         usr_inp = input("Enter the sr no. of the food you want to order: ")
         try:
             usr_inp = int(usr_inp)
@@ -63,7 +62,7 @@ class Foodies(Menu):
                         
                 self.total_cost += self.menu_dict[usr_inp]['price']*quant
                 self.orders[len(self.orders)+1] = {'name':self.menu_dict[usr_inp]['name'],'quantity':quant,'price': self.menu_dict[usr_inp]['price'],'dt':datetime.now()}
-                print(f"\n USER ID: {str(self.orderID)[-5:-1]}")
+                print(f"\n USER ID: {self.orderID}")
                 print(f"\n Your Order is: {self.menu_dict[usr_inp]['name']}    Quantity:{quant}     Price: {self.menu_dict[usr_inp]['price']}")
             else:
                 print("Enter valid input")
@@ -71,7 +70,7 @@ class Foodies(Menu):
             print("Enter valid input")
     def deliver_order(self):
         for i in self.orders:
-            print(f"\n USER ID: {str(self.orderID)[-5:-1]}")
+            print(f"\n USER ID: {self.orderID}")
             print(f"{self.orders[i]['name']} -> Delivered")
         try:
             connection = pyodbc.connect("Driver={SQL Server};"
@@ -85,7 +84,7 @@ class Foodies(Menu):
             INSERT INTO FoodOrders (orderID, food_id,food,quantity, price, order_date)
             VALUES (?, ?, ?, ?, ?, ?)
             """
-            data_mul = [(int(str(self.orderID).split(".")[1]),i,j['name'],j['quantity'],j['price'],j['dt']) for i,j in self.orders.items()]
+            data_mul = [(int(self.orderID),i,j['name'],j['quantity'],j['price'],j['dt']) for i,j in self.orders.items()]
             cursor.executemany(sql_insert_query, data_mul)
             connection.commit()
             print(f"{cursor.rowcount} records inserted.")
@@ -103,18 +102,21 @@ class Foodies(Menu):
 
     
     def generate_bill(self):
-        print('-'*60)
-        print("|{:^56}{:>4s}".format("Welcome to FOODIES","|"))
-        print("|",' '*57,"|")
-        print("|{:>17}{:1}{:>10}{:26}{:>3s}".format("Order ID:",str(self.orderID)[-5:-1],"Date:",datetime.now().strftime("%d/%m/%Y,%H:%M:%S"),"|"))
-        print("|",'-'*57,"|")
-        print("|{:<5s} {:28s} {:>9s} {:>10s}{:>5s}".format("sr","Food","quant","price","|"))
-        for e,i in enumerate(self.orders):
-            print("|{:<5} {:28s} {:>9} {:>8.2f} {:>6s}".format(e+1,self.orders[i]['name'],self.orders[i]['quantity'],self.orders[i]['price'],"|"))
-        print('|','-'*57,"|")
-        print("|{:>19s} {:>36.2f} {:>3}".format("Total Cost",self.total_cost,"|"))
-        print('|','-'*57,"|")
-        self.print_bill()
+        try:
+            print('-'*60)
+            print("|{:^56}{:>4s}".format("Welcome to FOODIES","|"))
+            print("|",' '*57,"|")
+            print("|{:>17}{:1}{:>10}{:26}{:>3s}".format("Order ID:",self.orderID,"Date:",datetime.now().strftime("%d/%m/%Y,%H:%M:%S"),"|"))
+            print("|",'-'*57,"|")
+            print("|{:<5s} {:28s} {:>9s} {:>10s}{:>5s}".format("sr","Food","quant","price","|"))
+            for e,i in enumerate(self.orders):
+                print("|{:<5} {:28s} {:>9} {:>8.2f} {:>6s}".format(e+1,self.orders[i]['name'],self.orders[i]['quantity'],self.orders[i]['price'],"|"))
+            print('|','-'*57,"|")
+            print("|{:>19s} {:>36.2f} {:>3}".format("Total Cost",self.total_cost,"|"))
+            print('|','-'*57,"|")
+            self.print_bill()
+        except:
+            print("Error While Generating Bill")
     def print_bill(self):
         while True:
             try:
@@ -125,7 +127,7 @@ class Foodies(Menu):
                                 print('-'*60,file=f)
                                 print("|{:^56}{:>4s}".format("Welcome to FOODIES","|"),file=f)
                                 print("|",' '*57,"|",file=f)
-                                print("|{:>17}{:1}{:>10}{:26}{:>3s}".format("Order ID:",str(self.orderID)[-5:-1],"Date:",datetime.now().strftime("%d/%m/%Y,%H:%M:%S"),"|"),file=f)
+                                print("|{:>17}{:1}{:>10}{:26}{:>3s}".format("Order ID:",self.orderID,"Date:",datetime.now().strftime("%d/%m/%Y,%H:%M:%S"),"|"),file=f)
                                 print("|",'-'*57,"|",file=f)
                                 print("|{:<5s} {:28s} {:>9s} {:>10s}{:>5s}".format("sr","Food","quant","price","|"),file=f)
                                 for e,i in enumerate(self.orders):
