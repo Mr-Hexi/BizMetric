@@ -9,7 +9,22 @@ This repository contains all the Python relation programs, exercises and Project
 
 ## 📓 Python_Assignment.ipynb
 
-This notebook contains the solution for the Assignments given by the Trainer.
+This notebook contains the solution for the Assignments given on topics:
+- List
+- Tuple
+- Dictionary
+- Functions
+- Generators
+- OOPs
+- File Handling
+
+---
+
+## 📓 Python_Assignment_0.ipynb
+
+This notebook contains the solution for the Assignments given on the topics:
+- List Comprehension
+- Lambda functions 
 
 ---
 
@@ -44,3 +59,23 @@ Program flow:
 7. Optionally print receipt file
 
 ---
+## 🍽️ Course_Registration.py — Mini Project
+
+A console-based **Course Registration System** built using:
+
+- Python
+
+### ✅ Features & Program Flow 
+
+Features:
+
+- Displays Courses available to choose from
+- Accepts user input
+- Generates Receipt 
+- Handles Errors using Exception Handling
+
+Program flow:
+1. Display Courses
+2. Ask for user input
+3. Stores user choice
+5. Generates receipts
