@@ -13,7 +13,8 @@ class CourseRegistration:
     '''
     Docstring for CourseRegistration
     
-    Course Registration class where 
+    Course Registration class with methods that let's student to  opt for courses,hostel,food,transport
+    
     '''
     
 
@@ -28,6 +29,13 @@ class CourseRegistration:
         self.total_cost = 0
 
     def CourseSelection(self):
+        
+        '''
+        
+        Method for course selection
+        
+        '''
+    
         for e,i in enumerate(self.L1):
             print(f"{e+1}. {i}")
         try:
@@ -43,6 +51,11 @@ class CourseRegistration:
             print("Invalid Input")
 
     def CourseStream(self):
+        '''
+        
+        Method for opting Course Stream 
+        
+        '''
         try:
             if self.cs!=4:
                 stream = input("Opt for Analytics? (Y/N): ")
@@ -63,6 +76,12 @@ class CourseRegistration:
             print("Invalid Input")
 
     def ChooseHotel(self):
+                
+        '''
+        
+        Method for opting Hotel 
+        
+        '''
         try:
             hostel = input("Hostel required? (Y/N): ")
             if hostel.lower() == 'y':
@@ -79,6 +98,12 @@ class CourseRegistration:
             print("Invalid Input")
 
     def ChooseFood(self):
+        
+        '''
+        
+        Method for opting for food
+        
+        '''
         try:
             food = input("Food required? (Y/N): ")
             if food.lower() == 'y':
@@ -100,6 +125,13 @@ class CourseRegistration:
             print("Invalid Input")
 
     def ChooseTransport(self):
+        
+        '''
+        
+        Method for opting Transport
+        
+        '''
+
         try:
             trans = input("Transport required? (Y/N): ")
             if trans.lower() == 'y':
@@ -123,6 +155,14 @@ class CourseRegistration:
             print("Invalid Input",e)
 
     def GenerateBill(self):
+        
+        
+        '''
+        
+        Method for Generating Bill
+        
+        '''
+
         try:
             print('-'*60)
             print("|{:^54}{:>6s}".format("WELCOME TO COURSE REGISTRATION","|"))

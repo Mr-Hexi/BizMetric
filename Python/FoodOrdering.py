@@ -5,6 +5,7 @@ class Menu:
     '''
     Docstring for Menu
     
+    Fetches Food Menu from SQL-Server and displays it 
     '''
 
     def __init__(self):
@@ -37,13 +38,31 @@ class Menu:
         print('|','-'*57,"|")
 
 class Foodies(Menu):
+    '''
+        Docstring for Foodies
+
+    A class made for taking order for individual order with  methods for:
+    * taking order 
+    * delivering order 
+    * generating bill  
+    * printing bill    
+    '''
     
     def __init__(self):
+        '''
+        Constructor for generating orderID, initializing variables for orders and total cost and printing the bill
+        
+        '''
         super().__init__()
         self.orderID = str(datetime.timestamp(datetime.now())).split(".")[0]
         self.orders = {}
         self.total_cost = 0
     def take_order(self):
+        
+        '''
+        Takes order from the user
+        
+        '''
         print(f"\n USER ID: {self.orderID}")
         usr_inp = input("Enter the sr no. of the food you want to order: ")
         try:
@@ -65,7 +84,14 @@ class Foodies(Menu):
                 print("Enter valid input")
         except:
             print("Enter valid input")
+            
+            
     def deliver_order(self):
+        
+        '''
+        pings whenever an order is Delivered and stores that order in DataBase 
+        
+        '''
         for i in self.orders:
             print(f"\n USER ID: {self.orderID}")
             print(f"{self.orders[i]['name']} -> Delivered")
@@ -76,7 +102,6 @@ class Foodies(Menu):
                       "Trusted_Connection=yes;")
             cursor = connection.cursor()
             
-                # SQL INSERT statement with placeholders (?) for parameters
             sql_insert_query = """
             INSERT INTO FoodOrders (orderID, food_id,food,quantity, price, order_date)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -93,6 +118,11 @@ class Foodies(Menu):
 
     
     def generate_bill(self):
+        
+        '''
+        Generates bill for the orders
+        and also asks the user if they want to print the bill
+        '''
         try:
             print('-'*60)
             print("|{:^56}{:>4s}".format("Welcome to FOODIES","|"))
@@ -108,7 +138,15 @@ class Foodies(Menu):
             self.print_bill()
         except:
             print("Error While Generating Bill")
+            
+            
     def print_bill(self):
+                
+        '''
+        Prints bill for the orders
+        
+        '''
+        
         while True:
             try:
                 pnt_bill = input("Would you like to print the bill? (Y/N): " )
