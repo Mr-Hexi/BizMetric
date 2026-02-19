@@ -20,13 +20,12 @@ class Menu:
             cursor.execute('SELECT * FROM FoodMenu')
             self.records = cursor.fetchall()
             self.menu_dict = {item[0]: {'name': item[1], 'price': float(item[2])} for item in  self.records}
+            cursor.close()
+            cnxn.close()           
         except:
             print("DataBase Not Found!!!!!")
 
-        finally:
-            cursor.close()
-            cnxn.close()
-            
+ 
             
     def show_menu(self):
         print('-'*60)
@@ -88,17 +87,11 @@ class Foodies(Menu):
             cursor.executemany(sql_insert_query, data_mul)
             connection.commit()
             print(f"{cursor.rowcount} records inserted.")
-        except pyodbc.Error as ex:
-            sqlstate = ex.args[0]
-            if sqlstate == '23000':
-                print("An error occurred due to data integrity violation (e.g., duplicate key, foreign key violation).")
-            else:
+            cursor.close()
+            connection.close()
+        except Exception as ex:
                 print("An error occurred in SQL Server:", ex)
-            connection.rollback()
-        finally:
-            if 'connection' in locals():
-                cursor.close()
-                connection.close()
+
 
     
     def generate_bill(self):
