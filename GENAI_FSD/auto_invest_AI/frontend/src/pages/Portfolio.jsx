@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Loader from "../components/Loader";
-import { fetchPortfolio } from "../api/stocks";
+import { createPortfolio, fetchPortfolio } from "../api/stocks";
 
 export default function Portfolio() {
   const [portfolios, setPortfolios] = useState([]);
+  const [form, setForm] = useState({ name: "", description: "" });
+  const [creating, setCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,8 +29,59 @@ export default function Portfolio() {
     loadPortfolios();
   }, []);
 
+  const handleCreatePortfolio = async (event) => {
+    event.preventDefault();
+    if (!form.name.trim()) {
+      return;
+    }
+    setCreating(true);
+    setError("");
+    setMessage("");
+    try {
+      const created = await createPortfolio({
+        name: form.name.trim(),
+        description: form.description.trim(),
+      });
+      setPortfolios((prev) => [...prev, created]);
+      setForm({ name: "", description: "" });
+      setMessage("Portfolio created successfully.");
+    } catch (err) {
+      const text = err.response?.data?.name?.[0] || "Unable to create portfolio.";
+      setError(text);
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <section className="space-y-6">
+      <div className="card p-5">
+        <h2 className="text-xl font-semibold text-slate-900">Create Portfolio</h2>
+        <form onSubmit={handleCreatePortfolio} className="mt-4 grid gap-3 sm:grid-cols-3">
+          <input
+            type="text"
+            value={form.name}
+            onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+            className="input"
+            placeholder="Portfolio name"
+            required
+          />
+          <input
+            type="text"
+            value={form.description}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, description: event.target.value }))
+            }
+            className="input"
+            placeholder="Description"
+          />
+          <button type="submit" className="btn-primary" disabled={creating}>
+            {creating ? "Creating..." : "Create Portfolio"}
+          </button>
+        </form>
+        {message && <p className="mt-3 text-sm text-emerald-700">{message}</p>}
+      </div>
+
       <div className="card p-5">
         <h1 className="text-2xl font-bold text-slate-900">Portfolios</h1>
         <p className="mt-1 text-sm text-slate-600">Select a portfolio to open stocks page.</p>

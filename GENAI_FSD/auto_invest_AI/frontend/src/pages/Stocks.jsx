@@ -12,7 +12,12 @@ import {
 import Loader from "../components/Loader";
 import SearchBar from "../components/SearchBar";
 import StockTable from "../components/StockTable";
-import { fetchPortfolio, fetchStocks, searchStocks } from "../api/stocks";
+import {
+  addStockToPortfolio,
+  fetchPortfolio,
+  fetchStocks,
+  searchLiveStocks,
+} from "../api/stocks";
 
 export default function Stocks() {
   const [searchParams] = useSearchParams();
@@ -20,7 +25,10 @@ export default function Stocks() {
 
   const [portfolios, setPortfolios] = useState([]);
   const [stocks, setStocks] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [addingSymbol, setAddingSymbol] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [tableLoading, setTableLoading] = useState(false);
   const [error, setError] = useState("");
@@ -36,6 +44,10 @@ export default function Stocks() {
         symbol: stock.symbol,
         pe_ratio: Number(stock.pe_ratio || 0),
       })),
+    [stocks]
+  );
+  const portfolioSymbols = useMemo(
+    () => new Set(stocks.map((stock) => String(stock.symbol).toUpperCase())),
     [stocks]
   );
 
@@ -76,20 +88,41 @@ export default function Stocks() {
 
     setTableLoading(true);
     setError("");
+    setMessage("");
     try {
       if (!searchQuery.trim()) {
-        const allStocks = await fetchStocks(portfolioId);
-        const normalizedStocks = allStocks || [];
-        setStocks(normalizedStocks);
+        setSearchResults([]);
       } else {
-        const results = await searchStocks(searchQuery.trim(), portfolioId);
-        const normalizedStocks = results || [];
-        setStocks(normalizedStocks);
+        const results = await searchLiveStocks(searchQuery.trim(), 20);
+        setSearchResults(results || []);
       }
     } catch {
       setError("Search request failed.");
     } finally {
       setTableLoading(false);
+    }
+  };
+
+  const handleAddStock = async (symbol) => {
+    if (!portfolioId || !symbol) {
+      return;
+    }
+
+    setAddingSymbol(symbol);
+    setMessage("");
+    setError("");
+    try {
+      await addStockToPortfolio(portfolioId, String(symbol).trim().toUpperCase());
+      const refreshed = await fetchStocks(portfolioId);
+      setStocks(refreshed || []);
+      setMessage(`${symbol} added to portfolio.`);
+    } catch (err) {
+      const message =
+        err.response?.data?.detail ||
+        "Unable to add stock. Check symbol and try again.";
+      setError(message);
+    } finally {
+      setAddingSymbol("");
     }
   };
 
@@ -109,18 +142,73 @@ export default function Stocks() {
           {selectedPortfolio?.description || "Stocks for selected portfolio."}
         </p>
         <SearchBar value={searchQuery} onChange={setSearchQuery} onSubmit={handleSearch} />
+        <p className="mt-2 text-xs text-slate-500">
+          Search live symbols and add any result directly to this portfolio.
+        </p>
       </div>
 
+      {message && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div>}
       {error && <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
 
       {loading || tableLoading ? (
         <div className="card p-5">
           <Loader />
         </div>
-      ) : stocks.length === 0 ? (
-        <div className="card p-8 text-center text-sm text-slate-500">No stocks found for this portfolio.</div>
       ) : (
         <div className="space-y-6">
+          {searchResults.length > 0 && (
+            <div className="card p-5">
+              <h2 className="text-lg font-semibold text-slate-900">Search Results</h2>
+              <div className="mt-4 overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-200">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Symbol</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Company</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Price</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {searchResults.map((result) => {
+                      const symbol = String(result.symbol || "").toUpperCase();
+                      const alreadyAdded = portfolioSymbols.has(symbol);
+                      return (
+                        <tr key={symbol}>
+                          <td className="px-4 py-3 text-sm font-semibold text-slate-900">{result.symbol}</td>
+                          <td className="px-4 py-3 text-sm text-slate-700">{result.company_name}</td>
+                          <td className="px-4 py-3 text-right text-sm text-slate-700">
+                            Rs {Number(result.current_price || 0).toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleAddStock(result.symbol)}
+                              className="btn-primary"
+                              disabled={alreadyAdded || addingSymbol === result.symbol}
+                            >
+                              {alreadyAdded
+                                ? "Added"
+                                : addingSymbol === result.symbol
+                                  ? "Adding..."
+                                  : "Add Stock"}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {stocks.length === 0 ? (
+            <div className="card p-8 text-center text-sm text-slate-500">
+              No stocks in this portfolio yet. Use search above and add stocks.
+            </div>
+          ) : (
+            <>
           <StockTable stocks={stocks} />
           <div className="card p-5">
             <h2 className="text-lg font-semibold text-slate-900">PE Ratio Comparison</h2>
@@ -136,8 +224,8 @@ export default function Stocks() {
               </ResponsiveContainer>
             </div>
           </div>
-
-
+            </>
+          )}
         </div>
       )}
     </section>

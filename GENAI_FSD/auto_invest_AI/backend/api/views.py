@@ -7,12 +7,15 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from api.serializers import (
+    AddStockToPortfolioSerializer,
     LoginSerializer,
     PortfolioSerializer,
     RegisterSerializer,
     StockDetailSerializer,
     StockListSerializer,
 )
+from analytics.services.pipeline import generate_and_persist_stock_analytics
+from analytics.services.yahoo_search import fetch_live_stock_detail, search_live_stocks
 from portfolio.models import Portfolio, Stock
 
 
@@ -67,11 +70,45 @@ class AuthViewSet(viewsets.GenericViewSet):
         )
 
 
-class PortfolioViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    """Read-only endpoint for portfolios."""
+class PortfolioViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
+    """List/create portfolios and add stocks."""
 
     serializer_class = PortfolioSerializer
     queryset = Portfolio.objects.all().order_by("id")
+
+    @action(detail=True, methods=["post"], url_path="add-stock")
+    def add_stock(self, request, pk=None):
+        portfolio = self.get_object()
+        serializer = AddStockToPortfolioSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        symbol = serializer.validated_data["symbol"].strip().upper()
+        live_payload = fetch_live_stock_detail(symbol)
+        if not live_payload:
+            return Response(
+                {"detail": "Could not fetch this symbol from Yahoo Finance."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        stock, _ = Stock.objects.update_or_create(
+            symbol=live_payload["symbol"],
+            defaults={
+                "portfolio": portfolio,
+                "company_name": live_payload["company_name"],
+                "sector": live_payload.get("sector") or portfolio.name,
+                "current_price": live_payload["current_price"],
+            },
+        )
+        generate_and_persist_stock_analytics(stock)
+
+        return Response(
+            StockListSerializer(stock).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class StockViewSet(viewsets.ReadOnlyModelViewSet):
@@ -101,3 +138,26 @@ class StockViewSet(viewsets.ReadOnlyModelViewSet):
             )
         serializer = StockListSerializer(queryset, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], url_path="live-search")
+    def live_search(self, request):
+        query = request.query_params.get("q", "").strip()
+        limit_param = request.query_params.get("limit", "10")
+        try:
+            limit = min(max(int(limit_param), 1), 20)
+        except ValueError:
+            limit = 10
+
+        rows = search_live_stocks(query=query, limit=limit)
+        return Response(rows)
+
+    @action(detail=False, methods=["get"], url_path="live-detail")
+    def live_detail(self, request):
+        symbol = request.query_params.get("symbol", "").strip()
+        payload = fetch_live_stock_detail(symbol)
+        if not payload:
+            return Response(
+                {"detail": "Live stock not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response(payload)

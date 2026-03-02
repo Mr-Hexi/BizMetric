@@ -21,6 +21,10 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
 
+class AddStockToPortfolioSerializer(serializers.Serializer):
+    symbol = serializers.CharField(max_length=30)
+
+
 class StockAnalyticsSerializer(serializers.ModelSerializer):
     class Meta:
         model = StockAnalytics
@@ -86,6 +90,9 @@ class StockListSerializer(serializers.ModelSerializer):
 class StockDetailSerializer(serializers.ModelSerializer):
     analytics = StockAnalyticsSerializer(read_only=True)
     portfolio_name = serializers.CharField(source="portfolio.name", read_only=True)
+    min_price = serializers.SerializerMethodField()
+    max_price = serializers.SerializerMethodField()
+    today_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Stock
@@ -97,8 +104,36 @@ class StockDetailSerializer(serializers.ModelSerializer):
             "company_name",
             "sector",
             "current_price",
+            "min_price",
+            "max_price",
+            "today_price",
             "analytics",
         )
+
+    def _price_series(self, obj):
+        analytics = getattr(obj, "analytics", None)
+        if not analytics:
+            return []
+        prices = analytics.graph_data.get("price", [])
+        return [float(value) for value in prices if isinstance(value, (int, float))]
+
+    def get_min_price(self, obj):
+        prices = self._price_series(obj)
+        if not prices:
+            return None
+        return round(min(prices), 2)
+
+    def get_max_price(self, obj):
+        prices = self._price_series(obj)
+        if not prices:
+            return None
+        return round(max(prices), 2)
+
+    def get_today_price(self, obj):
+        prices = self._price_series(obj)
+        if not prices:
+            return None
+        return round(prices[-1], 2)
 
 
 class PortfolioSerializer(serializers.ModelSerializer):

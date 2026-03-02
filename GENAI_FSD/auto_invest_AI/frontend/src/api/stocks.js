@@ -5,6 +5,16 @@ export const fetchPortfolio = async () => {
   return data;
 };
 
+export const createPortfolio = async (payload) => {
+  const { data } = await api.post("portfolio/", payload);
+  return data;
+};
+
+export const addStockToPortfolio = async (portfolioId, symbol) => {
+  const { data } = await api.post(`portfolio/${portfolioId}/add-stock/`, { symbol });
+  return data;
+};
+
 export const fetchStocks = async (portfolioId = null) => {
   const queryParams = new URLSearchParams();
   if (portfolioId) {
@@ -15,12 +25,18 @@ export const fetchStocks = async (portfolioId = null) => {
   return data;
 };
 
-export const searchStocks = async (query, portfolioId = null) => {
-  const queryParams = new URLSearchParams({ q: query });
-  if (portfolioId) {
-    queryParams.set("portfolio", String(portfolioId));
-  }
-  const { data } = await api.get(`stocks/search/?${queryParams.toString()}`);
+export const searchLiveStocks = async (query, limit = 10) => {
+  const queryParams = new URLSearchParams({
+    q: query,
+    limit: String(limit),
+  });
+  const { data } = await api.get(`stocks/live-search/?${queryParams.toString()}`);
+  return data;
+};
+
+export const fetchLiveStockBySymbol = async (symbol) => {
+  const queryParams = new URLSearchParams({ symbol });
+  const { data } = await api.get(`stocks/live-detail/?${queryParams.toString()}`);
   return data;
 };
 

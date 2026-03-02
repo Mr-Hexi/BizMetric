@@ -6,6 +6,7 @@ import Register from "./pages/Register";
 import Portfolio from "./pages/Portfolio";
 import Stocks from "./pages/Stocks";
 import StockDetail from "./pages/StockDetail";
+import LiveStockDetail from "./pages/LiveStockDetail";
 
 export default function App() {
   return (
@@ -37,6 +38,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <StockDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/stocks/live/:symbol"
+            element={
+              <ProtectedRoute>
+                <LiveStockDetail />
               </ProtectedRoute>
             }
           />

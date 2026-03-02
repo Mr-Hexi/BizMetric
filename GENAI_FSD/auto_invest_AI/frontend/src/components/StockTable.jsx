@@ -1,8 +1,9 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import OpportunityBadge from "./OpportunityBadge";
 
 export default function StockTable({ stocks }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <div className="card overflow-hidden">
@@ -23,9 +24,19 @@ export default function StockTable({ stocks }) {
           <tbody className="divide-y divide-slate-100 bg-white">
             {stocks.map((stock) => (
               <tr
-                key={stock.id}
-                className="cursor-pointer transition hover:bg-brand-50"
-                onClick={() => navigate(`/stocks/${stock.id}`)}
+                key={stock.id ?? stock.symbol}
+                className={`${stock.id || stock.is_live ? "cursor-pointer hover:bg-brand-50" : "cursor-default"} transition`}
+                onClick={() => {
+                  if (stock.id) {
+                    navigate(`/stocks/${stock.id}`, {
+                      state: { from: `${location.pathname}${location.search}` },
+                    });
+                  } else if (stock.is_live && stock.symbol) {
+                    navigate(`/stocks/live/${encodeURIComponent(stock.symbol)}`, {
+                      state: { from: `${location.pathname}${location.search}` },
+                    });
+                  }
+                }}
               >
                 <td className="px-4 py-3 text-sm font-semibold text-slate-900">{stock.symbol}</td>
                 <td className="px-4 py-3 text-sm text-slate-700">{stock.company_name}</td>

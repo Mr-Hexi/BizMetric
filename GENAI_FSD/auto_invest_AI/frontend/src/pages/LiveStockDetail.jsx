@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import {
   CartesianGrid,
   Legend,
@@ -13,10 +13,11 @@ import {
 import Loader from "../components/Loader";
 import OpportunityBadge from "../components/OpportunityBadge";
 import StockCard from "../components/StockCard";
-import { fetchStockById } from "../api/stocks";
+import { fetchLiveStockBySymbol } from "../api/stocks";
 
-export default function StockDetail() {
-  const { id } = useParams();
+export default function LiveStockDetail() {
+  const { symbol } = useParams();
+  const location = useLocation();
   const [stock, setStock] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -26,17 +27,17 @@ export default function StockDetail() {
       setLoading(true);
       setError("");
       try {
-        const data = await fetchStockById(id);
+        const data = await fetchLiveStockBySymbol(symbol);
         setStock(data);
       } catch {
-        setError("Failed to load stock details.");
+        setError("Failed to load live stock details.");
       } finally {
         setLoading(false);
       }
     };
 
     loadStock();
-  }, [id]);
+  }, [symbol]);
 
   const chartData = useMemo(() => {
     const graph = stock?.analytics?.graph_data;
@@ -64,16 +65,16 @@ export default function StockDetail() {
   }
 
   if (!stock) {
-    return <div className="card p-5 text-sm text-slate-500">Stock not found.</div>;
+    return <div className="card p-5 text-sm text-slate-500">Live stock not found.</div>;
   }
 
-  const backPortfolioQuery = stock.portfolio ? `?portfolio=${stock.portfolio}` : "";
+  const backPath = location.state?.from || "/stocks";
 
   return (
     <section className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">Stock Analytics</h1>
-        <Link to={`/stocks${backPortfolioQuery}`} className="btn-secondary">
+        <h1 className="text-2xl font-bold text-slate-900">Live Stock Analytics</h1>
+        <Link to={backPath} className="btn-secondary">
           Back to Stocks
         </Link>
       </div>
@@ -131,7 +132,7 @@ export default function StockDetail() {
       </div>
 
       <div className="card p-5">
-        <h2 className="text-lg font-semibold text-slate-900">Opportunity Graph</h2>
+        <h2 className="text-lg font-semibold text-slate-900">1Y Price Graph</h2>
         <div className="mt-4 h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
