@@ -4,7 +4,7 @@ from portfolio.models import Stock
 
 
 class Command(BaseCommand):
-    help = "Run mock analytics pipeline and persist StockAnalytics records."
+    help = "Run live analytics pipeline and persist StockAnalytics records."
 
     def handle(self, *args, **options):
         count = 0

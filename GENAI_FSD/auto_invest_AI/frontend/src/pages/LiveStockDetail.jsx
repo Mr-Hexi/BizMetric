@@ -14,6 +14,7 @@ import Loader from "../components/Loader";
 import OpportunityBadge from "../components/OpportunityBadge";
 import StockCard from "../components/StockCard";
 import { fetchLiveStockBySymbol } from "../api/stocks";
+import { currencyCodeFromItem, formatMoney } from "../utils/currency";
 
 export default function LiveStockDetail() {
   const { symbol } = useParams();
@@ -69,6 +70,7 @@ export default function LiveStockDetail() {
   }
 
   const backPath = location.state?.from || "/stocks";
+  const currencyCode = currencyCodeFromItem(stock);
 
   return (
     <section className="space-y-6">
@@ -89,24 +91,24 @@ export default function LiveStockDetail() {
           <div className="mt-4 grid gap-4 sm:grid-cols-4">
             <div className="rounded-lg border border-slate-200 p-4">
               <p className="text-xs uppercase tracking-wide text-slate-500">Current Price</p>
-              <p className="mt-2 text-xl font-bold text-slate-900">Rs {Number(stock.current_price ?? 0).toFixed(2)}</p>
+              <p className="mt-2 text-xl font-bold text-slate-900">{formatMoney(stock.current_price, currencyCode)}</p>
             </div>
             <div className="rounded-lg border border-slate-200 p-4">
               <p className="text-xs uppercase tracking-wide text-slate-500">Min Price</p>
               <p className="mt-2 text-xl font-bold text-slate-900">
-                {stock.min_price == null ? "-" : `Rs ${Number(stock.min_price).toFixed(2)}`}
+                {formatMoney(stock.min_price, currencyCode)}
               </p>
             </div>
             <div className="rounded-lg border border-slate-200 p-4">
               <p className="text-xs uppercase tracking-wide text-slate-500">Max Price</p>
               <p className="mt-2 text-xl font-bold text-slate-900">
-                {stock.max_price == null ? "-" : `Rs ${Number(stock.max_price).toFixed(2)}`}
+                {formatMoney(stock.max_price, currencyCode)}
               </p>
             </div>
             <div className="rounded-lg border border-slate-200 p-4">
               <p className="text-xs uppercase tracking-wide text-slate-500">Today Price</p>
               <p className="mt-2 text-xl font-bold text-slate-900">
-                {stock.today_price == null ? "-" : `Rs ${Number(stock.today_price).toFixed(2)}`}
+                {formatMoney(stock.today_price, currencyCode)}
               </p>
             </div>
           </div>
@@ -157,3 +159,4 @@ export default function LiveStockDetail() {
     </section>
   );
 }
+

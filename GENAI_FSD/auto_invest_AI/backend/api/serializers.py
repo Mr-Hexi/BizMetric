@@ -5,6 +5,13 @@ from analytics.models import StockAnalytics
 from portfolio.models import Portfolio, Stock
 
 
+def _infer_currency_from_symbol(symbol: str) -> str:
+    value = str(symbol or "").upper()
+    if value.endswith(".NS") or value.endswith(".BO"):
+        return "INR"
+    return "USD"
+
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
 
@@ -46,6 +53,7 @@ class StockListSerializer(serializers.ModelSerializer):
     min_price = serializers.SerializerMethodField()
     max_price = serializers.SerializerMethodField()
     closing_price = serializers.SerializerMethodField()
+    currency = serializers.SerializerMethodField()
 
     class Meta:
         model = Stock
@@ -57,6 +65,7 @@ class StockListSerializer(serializers.ModelSerializer):
             "min_price",
             "max_price",
             "closing_price",
+            "currency",
             "pe_ratio",
             "discount_level",
         )
@@ -86,6 +95,9 @@ class StockListSerializer(serializers.ModelSerializer):
             return None
         return round(prices[-1], 2)
 
+    def get_currency(self, obj):
+        return _infer_currency_from_symbol(obj.symbol)
+
 
 class StockDetailSerializer(serializers.ModelSerializer):
     analytics = StockAnalyticsSerializer(read_only=True)
@@ -93,6 +105,7 @@ class StockDetailSerializer(serializers.ModelSerializer):
     min_price = serializers.SerializerMethodField()
     max_price = serializers.SerializerMethodField()
     today_price = serializers.SerializerMethodField()
+    currency = serializers.SerializerMethodField()
 
     class Meta:
         model = Stock
@@ -107,6 +120,7 @@ class StockDetailSerializer(serializers.ModelSerializer):
             "min_price",
             "max_price",
             "today_price",
+            "currency",
             "analytics",
         )
 
@@ -134,6 +148,9 @@ class StockDetailSerializer(serializers.ModelSerializer):
         if not prices:
             return None
         return round(prices[-1], 2)
+
+    def get_currency(self, obj):
+        return _infer_currency_from_symbol(obj.symbol)
 
 
 class PortfolioSerializer(serializers.ModelSerializer):

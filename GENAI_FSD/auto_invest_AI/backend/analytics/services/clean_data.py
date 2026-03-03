@@ -5,7 +5,7 @@ from datetime import datetime
 
 def clean_data(df: list[dict]) -> list[dict]:
     """
-    Clean and standardize mock stock dataframe.
+    Clean and standardize live stock price rows.
     """
     cleaned: list[dict] = []
     for row in df:

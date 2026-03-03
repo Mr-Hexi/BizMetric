@@ -15,7 +15,11 @@ from api.serializers import (
     StockListSerializer,
 )
 from analytics.services.pipeline import generate_and_persist_stock_analytics
-from analytics.services.yahoo_search import fetch_live_stock_detail, search_live_stocks
+from analytics.services.yahoo_search import (
+    fetch_live_stock_comparison,
+    fetch_live_stock_detail,
+    search_live_stocks,
+)
 from portfolio.models import Portfolio, Stock
 
 
@@ -154,10 +158,51 @@ class StockViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=["get"], url_path="live-detail")
     def live_detail(self, request):
         symbol = request.query_params.get("symbol", "").strip()
-        payload = fetch_live_stock_detail(symbol)
+        period = request.query_params.get("period", "1y").strip().lower()
+        interval = request.query_params.get("interval", "1d").strip().lower()
+
+        payload = fetch_live_stock_detail(symbol, period=period, interval=interval)
         if not payload:
             return Response(
                 {"detail": "Live stock not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
         return Response(payload)
+
+    @action(detail=False, methods=["get"], url_path="live-compare")
+    def live_compare(self, request):
+        symbol_a = request.query_params.get("symbol_a", "").strip()
+        symbol_b = request.query_params.get("symbol_b", "").strip()
+        period = request.query_params.get("period", "5y").strip().lower()
+        interval = request.query_params.get("interval", "1d").strip().lower()
+
+        if not symbol_a or not symbol_b:
+            return Response(
+                {"detail": "Both stock symbols are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            payload = fetch_live_stock_comparison(
+                symbol_a=symbol_a,
+                symbol_b=symbol_b,
+                period=period,
+                interval=interval,
+            )
+            return Response(payload)
+        except ValueError as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception:
+            return Response(
+                {"detail": "Failed to fetch comparison data from Yahoo Finance."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+    @action(detail=True, methods=["delete"], url_path="remove")
+    def remove(self, request, pk=None):
+        stock = self.get_object()
+        stock.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

@@ -2,10 +2,15 @@ from __future__ import annotations
 
 from typing import Any
 from datetime import datetime, timezone
+from math import sqrt
 
 import yfinance as yf
 
 from analytics.services.opportunity_engine import opportunity_engine
+
+
+ALLOWED_PERIODS = {"1mo", "3mo", "6mo", "1y", "2y", "3y", "5y", "10y", "max"}
+ALLOWED_INTERVALS = {"1d", "1wk", "1mo"}
 
 
 def _discount_level(min_price: float, max_price: float, current_price: float) -> str:
@@ -17,6 +22,103 @@ def _discount_level(min_price: float, max_price: float, current_price: float) ->
     if price_position <= 0.66:
         return "MEDIUM"
     return "LOW"
+
+
+def _normalize_period(period: str | None) -> str:
+    value = (period or "1y").strip().lower()
+    return value if value in ALLOWED_PERIODS else "1y"
+
+
+def _normalize_interval(interval: str | None) -> str:
+    value = (interval or "1d").strip().lower()
+    return value if value in ALLOWED_INTERVALS else "1d"
+
+
+def _infer_currency(symbol: str, reported_currency: str | None = None) -> str:
+    if reported_currency:
+        return str(reported_currency).upper()
+    symbol_upper = str(symbol or "").upper()
+    if symbol_upper.endswith(".NS") or symbol_upper.endswith(".BO"):
+        return "INR"
+    return "USD"
+
+
+def _extract_prices(history):
+    if "Adj Close" in history.columns:
+        series = history["Adj Close"].dropna()
+        if not series.empty:
+            return series
+    if "Close" in history.columns:
+        return history["Close"].dropna()
+    return history.iloc[:, 0].dropna()
+
+
+def _compute_regression(points: list[dict[str, float]]) -> dict[str, float]:
+    n = len(points)
+    if n < 2:
+        return {"slope": 0.0, "intercept": 0.0, "correlation": 0.0}
+
+    sum_x = sum(point["x"] for point in points)
+    sum_y = sum(point["y"] for point in points)
+    sum_xy = sum(point["x"] * point["y"] for point in points)
+    sum_x2 = sum(point["x"] * point["x"] for point in points)
+    sum_y2 = sum(point["y"] * point["y"] for point in points)
+
+    denominator = (n * sum_x2) - (sum_x * sum_x)
+    slope = 0.0 if denominator == 0 else ((n * sum_xy) - (sum_x * sum_y)) / denominator
+    intercept = (sum_y - (slope * sum_x)) / n
+
+    corr_numerator = (n * sum_xy) - (sum_x * sum_y)
+    corr_denominator = sqrt(((n * sum_x2) - (sum_x * sum_x)) * ((n * sum_y2) - (sum_y * sum_y)))
+    correlation = 0.0 if corr_denominator == 0 else corr_numerator / corr_denominator
+
+    return {"slope": slope, "intercept": intercept, "correlation": correlation}
+
+
+def _fetch_ticker_payload(symbol: str, period: str, interval: str) -> dict[str, Any]:
+    ticker = yf.Ticker(symbol)
+    history = ticker.history(period=period, interval=interval)
+    if history.empty:
+        raise ValueError(f"No data found for ticker: {symbol}")
+
+    closes = _extract_prices(history)
+    if closes.empty:
+        raise ValueError(f"No price data available for ticker: {symbol}")
+
+    dates = [idx.strftime("%Y-%m-%d") for idx in closes.index]
+    prices = [round(float(value), 4) for value in closes.tolist()]
+    current_price = prices[-1]
+    min_price = min(prices)
+    max_price = max(prices)
+    moving_avg = [
+        round(float(closes.iloc[max(0, i - 4): i + 1].mean()), 4)
+        for i in range(len(closes))
+    ]
+
+    info = {}
+    try:
+        info = ticker.info or {}
+    except Exception:
+        info = {}
+
+    pe_ratio = info.get("trailingPE") or info.get("forwardPE")
+    company_name = info.get("shortName") or info.get("longName") or symbol
+    currency = _infer_currency(symbol, info.get("currency"))
+
+    return {
+        "symbol": symbol,
+        "company_name": company_name,
+        "currency": currency,
+        "pe_ratio": round(float(pe_ratio), 2) if pe_ratio is not None else None,
+        "current_price": round(current_price, 2),
+        "min_price": round(min_price, 2),
+        "max_price": round(max_price, 2),
+        "today_price": round(current_price, 2),
+        "dates": dates,
+        "prices": prices,
+        "moving_avg": moving_avg,
+        "price_map": {dates[index]: prices[index] for index in range(len(dates))},
+    }
 
 
 def search_live_stocks(query: str, limit: int = 10) -> list[dict[str, Any]]:
@@ -72,10 +174,12 @@ def search_live_stocks(query: str, limit: int = 10) -> list[dict[str, Any]]:
 
             pe_ratio = None
             company_name = candidate["company_name"]
+            currency = None
             try:
                 info = ticker.info or {}
                 pe_ratio = info.get("trailingPE") or info.get("forwardPE")
                 company_name = info.get("shortName") or info.get("longName") or company_name
+                currency = info.get("currency")
             except Exception:
                 pass
 
@@ -90,6 +194,7 @@ def search_live_stocks(query: str, limit: int = 10) -> list[dict[str, Any]]:
                     "max_price": max_price,
                     "closing_price": closing_price,
                     "pe_ratio": pe_ratio_value,
+                    "currency": _infer_currency(symbol, currency),
                     "discount_level": _discount_level(
                         min_price=min_price,
                         max_price=max_price,
@@ -104,7 +209,11 @@ def search_live_stocks(query: str, limit: int = 10) -> list[dict[str, Any]]:
     return results
 
 
-def fetch_live_stock_detail(symbol: str) -> dict[str, Any] | None:
+def fetch_live_stock_detail(
+    symbol: str,
+    period: str = "1y",
+    interval: str = "1d",
+) -> dict[str, Any] | None:
     """
     Fetch one live stock detail from Yahoo Finance and return payload
     compatible with local StockDetail response shape.
@@ -113,40 +222,22 @@ def fetch_live_stock_detail(symbol: str) -> dict[str, Any] | None:
     if not ticker_symbol:
         return None
 
+    normalized_period = _normalize_period(period)
+    normalized_interval = _normalize_interval(interval)
+
     try:
-        ticker = yf.Ticker(ticker_symbol)
-        history = ticker.history(period="1y", interval="1d")
-        if history.empty:
-            return None
-
-        closes = history["Close"].dropna()
-        if closes.empty:
-            return None
-
-        dates = [idx.strftime("%Y-%m-%d") for idx in closes.index]
-        prices = [round(float(value), 2) for value in closes.tolist()]
-        moving_avg = [
-            round(float(closes.iloc[max(0, i - 4): i + 1].mean()), 2)
-            for i in range(len(closes))
-        ]
-
-        current_price = prices[-1]
-        min_price = min(prices)
-        max_price = max(prices)
+        payload = _fetch_ticker_payload(
+            symbol=ticker_symbol,
+            period=normalized_period,
+            interval=normalized_interval,
+        )
+        prices = payload["prices"]
+        current_price = payload["current_price"]
+        min_price = payload["min_price"]
+        max_price = payload["max_price"]
         discount_level = _discount_level(min_price=min_price, max_price=max_price, current_price=current_price)
-
-        pe_ratio = None
-        company_name = ticker_symbol
-        sector = "Global"
-        try:
-            info = ticker.info or {}
-            pe_ratio = info.get("trailingPE") or info.get("forwardPE")
-            company_name = info.get("shortName") or info.get("longName") or ticker_symbol
-            sector = info.get("sector") or "Global"
-        except Exception:
-            pass
-
-        pe_value = round(float(pe_ratio), 2) if pe_ratio is not None else 0.0
+        pe_ratio = payload["pe_ratio"]
+        pe_value = pe_ratio if pe_ratio is not None else 0.0
         opportunity_score = opportunity_engine(pe_ratio=pe_value, discount_level=discount_level)
 
         return {
@@ -154,24 +245,119 @@ def fetch_live_stock_detail(symbol: str) -> dict[str, Any] | None:
             "portfolio": None,
             "portfolio_name": "Global Search",
             "symbol": ticker_symbol,
-            "company_name": company_name,
-            "sector": sector,
+            "company_name": payload["company_name"],
+            "sector": "Global",
+            "currency": payload["currency"],
             "current_price": current_price,
             "min_price": round(min_price, 2),
             "max_price": round(max_price, 2),
             "today_price": round(current_price, 2),
             "is_live": True,
             "analytics": {
-                "pe_ratio": pe_value if pe_ratio is not None else None,
+                "pe_ratio": pe_ratio,
                 "discount_level": discount_level,
                 "opportunity_score": opportunity_score,
                 "graph_data": {
-                    "dates": dates,
+                    "dates": payload["dates"],
                     "price": prices,
-                    "moving_avg": moving_avg,
+                    "moving_avg": payload["moving_avg"],
+                    "period": normalized_period,
+                    "interval": normalized_interval,
                 },
                 "last_updated": datetime.now(timezone.utc).isoformat(),
             },
         }
     except Exception:
         return None
+
+
+def fetch_live_stock_comparison(
+    symbol_a: str,
+    symbol_b: str,
+    period: str = "5y",
+    interval: str = "1d",
+) -> dict[str, Any]:
+    ticker_a = symbol_a.strip().upper()
+    ticker_b = symbol_b.strip().upper()
+    if not ticker_a or not ticker_b:
+        raise ValueError("Both stock symbols are required.")
+    if ticker_a == ticker_b:
+        raise ValueError("Please select two different stocks.")
+
+    normalized_period = _normalize_period(period or "5y")
+    normalized_interval = _normalize_interval(interval)
+
+    try:
+        stock_a = _fetch_ticker_payload(ticker_a, normalized_period, normalized_interval)
+        stock_b = _fetch_ticker_payload(ticker_b, normalized_period, normalized_interval)
+    except ValueError:
+        raise
+    except Exception as exc:
+        raise RuntimeError("Unable to fetch stock data from Yahoo Finance.") from exc
+
+    aligned_dates = sorted(set(stock_a["price_map"].keys()).intersection(stock_b["price_map"].keys()))
+    historical = []
+    for date in aligned_dates:
+        price_a = stock_a["price_map"].get(date)
+        price_b = stock_b["price_map"].get(date)
+        if price_a is None or price_b is None:
+            continue
+        historical.append(
+            {
+                "date": date,
+                "price_a": round(float(price_a), 4),
+                "price_b": round(float(price_b), 4),
+            }
+        )
+
+    if len(historical) < 2:
+        raise ValueError("Not enough overlapping data to compare selected stocks.")
+
+    points = [{"x": row["price_a"], "y": row["price_b"], "date": row["date"]} for row in historical]
+    regression = _compute_regression(points)
+    scatter = [
+        {
+            "date": point["date"],
+            "x": point["x"],
+            "y": point["y"],
+            "y_fit": round((regression["slope"] * point["x"]) + regression["intercept"], 6),
+        }
+        for point in sorted(points, key=lambda item: item["x"])
+    ]
+
+    slope = regression["slope"]
+    intercept = regression["intercept"]
+    equation = f"{ticker_b} = {slope:.6f} * {ticker_a} + {intercept:.6f}"
+
+    return {
+        "period": normalized_period,
+        "interval": normalized_interval,
+        "stock_a": {
+            "symbol": stock_a["symbol"],
+            "company_name": stock_a["company_name"],
+            "currency": stock_a["currency"],
+            "current_price": stock_a["current_price"],
+            "min_price": stock_a["min_price"],
+            "max_price": stock_a["max_price"],
+            "today_price": stock_a["today_price"],
+            "pe_ratio": stock_a["pe_ratio"],
+        },
+        "stock_b": {
+            "symbol": stock_b["symbol"],
+            "company_name": stock_b["company_name"],
+            "currency": stock_b["currency"],
+            "current_price": stock_b["current_price"],
+            "min_price": stock_b["min_price"],
+            "max_price": stock_b["max_price"],
+            "today_price": stock_b["today_price"],
+            "pe_ratio": stock_b["pe_ratio"],
+        },
+        "historical": historical,
+        "scatter": scatter,
+        "pearson_correlation": round(regression["correlation"], 6),
+        "regression": {
+            "slope": round(slope, 6),
+            "intercept": round(intercept, 6),
+            "equation": equation,
+        },
+    }

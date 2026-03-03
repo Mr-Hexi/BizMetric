@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Loader from "../components/Loader";
 import { createPortfolio, fetchPortfolio } from "../api/stocks";
 
+const ACTIVE_PORTFOLIO_KEY = "active_portfolio_id";
+
 export default function Portfolio() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [portfolios, setPortfolios] = useState([]);
   const [form, setForm] = useState({ name: "", description: "" });
   const [creating, setCreating] = useState(false);
@@ -11,6 +14,14 @@ export default function Portfolio() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const notice = searchParams.get("notice");
+    if (notice === "select-portfolio") {
+      setMessage("Please select or create a portfolio first.");
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     const loadPortfolios = async () => {
@@ -42,6 +53,7 @@ export default function Portfolio() {
         name: form.name.trim(),
         description: form.description.trim(),
       });
+      sessionStorage.setItem(ACTIVE_PORTFOLIO_KEY, String(created.id));
       setPortfolios((prev) => [...prev, created]);
       setForm({ name: "", description: "" });
       setMessage("Portfolio created successfully.");
@@ -90,7 +102,10 @@ export default function Portfolio() {
             <button
               key={portfolio.id}
               type="button"
-              onClick={() => navigate(`/stocks?portfolio=${portfolio.id}`)}
+              onClick={() => {
+                sessionStorage.setItem(ACTIVE_PORTFOLIO_KEY, String(portfolio.id));
+                navigate(`/stocks?portfolio=${portfolio.id}`);
+              }}
               className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-brand-300 hover:bg-slate-50"
             >
               <p className="text-sm font-semibold text-slate-900">{portfolio.name}</p>

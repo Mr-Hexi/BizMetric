@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Bar,
   BarChart,
@@ -12,15 +12,20 @@ import {
 import Loader from "../components/Loader";
 import SearchBar from "../components/SearchBar";
 import StockTable from "../components/StockTable";
+import { currencyCodeFromItem, formatMoney } from "../utils/currency";
 import {
   addStockToPortfolio,
   fetchPortfolio,
   fetchStocks,
+  removeStockFromPortfolio,
   searchLiveStocks,
 } from "../api/stocks";
 
+const ACTIVE_PORTFOLIO_KEY = "active_portfolio_id";
+
 export default function Stocks() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const portfolioId = searchParams.get("portfolio");
 
   const [portfolios, setPortfolios] = useState([]);
@@ -28,6 +33,7 @@ export default function Stocks() {
   const [searchResults, setSearchResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [addingSymbol, setAddingSymbol] = useState("");
+  const [deletingStockId, setDeletingStockId] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [tableLoading, setTableLoading] = useState(false);
@@ -61,8 +67,17 @@ export default function Stocks() {
           fetchStocks(portfolioId),
         ]);
         const normalizedStocks = Array.isArray(stockData) ? stockData : [];
+        const normalizedPortfolios = Array.isArray(portfolioData) ? portfolioData : [];
+        const portfolioExists = normalizedPortfolios.some(
+          (item) => String(item.id) === String(portfolioId)
+        );
+        if (!portfolioExists) {
+          navigate("/portfolio?notice=select-portfolio", { replace: true });
+          return;
+        }
 
-        setPortfolios(Array.isArray(portfolioData) ? portfolioData : []);
+        sessionStorage.setItem(ACTIVE_PORTFOLIO_KEY, String(portfolioId));
+        setPortfolios(normalizedPortfolios);
         setStocks(normalizedStocks);
       } catch {
         setError("Unable to load stocks for this portfolio.");
@@ -72,13 +87,17 @@ export default function Stocks() {
     };
 
     if (!portfolioId) {
-      setLoading(false);
-      setError("Portfolio is required. Open this page from /portfolio.");
+      const activePortfolioId = sessionStorage.getItem(ACTIVE_PORTFOLIO_KEY);
+      if (activePortfolioId) {
+        navigate(`/stocks?portfolio=${activePortfolioId}`, { replace: true });
+        return;
+      }
+      navigate("/portfolio?notice=select-portfolio", { replace: true });
       return;
     }
 
     loadData();
-  }, [portfolioId]);
+  }, [navigate, portfolioId]);
 
   const handleSearch = async (event) => {
     event.preventDefault();
@@ -123,6 +142,29 @@ export default function Stocks() {
       setError(message);
     } finally {
       setAddingSymbol("");
+    }
+  };
+
+  const handleDeleteStock = async (stockId, symbol) => {
+    if (!stockId || !portfolioId) {
+      return;
+    }
+
+    setDeletingStockId(stockId);
+    setMessage("");
+    setError("");
+    try {
+      await removeStockFromPortfolio(stockId);
+      const refreshed = await fetchStocks(portfolioId);
+      setStocks(refreshed || []);
+      setMessage(`${symbol} removed from portfolio.`);
+    } catch (err) {
+      const text =
+        err.response?.data?.detail ||
+        "Unable to delete stock. Please try again.";
+      setError(text);
+    } finally {
+      setDeletingStockId(null);
     }
   };
 
@@ -178,7 +220,7 @@ export default function Stocks() {
                           <td className="px-4 py-3 text-sm font-semibold text-slate-900">{result.symbol}</td>
                           <td className="px-4 py-3 text-sm text-slate-700">{result.company_name}</td>
                           <td className="px-4 py-3 text-right text-sm text-slate-700">
-                            Rs {Number(result.current_price || 0).toFixed(2)}
+                            {formatMoney(result.current_price, currencyCodeFromItem(result))}
                           </td>
                           <td className="px-4 py-3 text-right">
                             <button
@@ -209,7 +251,11 @@ export default function Stocks() {
             </div>
           ) : (
             <>
-          <StockTable stocks={stocks} />
+          <StockTable
+            stocks={stocks}
+            onDeleteStock={handleDeleteStock}
+            deletingStockId={deletingStockId}
+          />
           <div className="card p-5">
             <h2 className="text-lg font-semibold text-slate-900">PE Ratio Comparison</h2>
             <div className="mt-4 h-80 w-full">
@@ -231,3 +277,4 @@ export default function Stocks() {
     </section>
   );
 }
+

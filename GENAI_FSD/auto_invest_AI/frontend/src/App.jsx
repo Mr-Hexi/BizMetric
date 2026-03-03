@@ -7,6 +7,7 @@ import Portfolio from "./pages/Portfolio";
 import Stocks from "./pages/Stocks";
 import StockDetail from "./pages/StockDetail";
 import LiveStockDetail from "./pages/LiveStockDetail";
+import CompareStocks from "./pages/CompareStocks";
 
 export default function App() {
   return (
@@ -30,6 +31,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Stocks />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/compare"
+            element={
+              <ProtectedRoute>
+                <CompareStocks />
               </ProtectedRoute>
             }
           />

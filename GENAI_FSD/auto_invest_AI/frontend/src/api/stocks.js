@@ -15,6 +15,10 @@ export const addStockToPortfolio = async (portfolioId, symbol) => {
   return data;
 };
 
+export const removeStockFromPortfolio = async (stockId) => {
+  await api.delete(`stocks/${stockId}/remove/`);
+};
+
 export const fetchStocks = async (portfolioId = null) => {
   const queryParams = new URLSearchParams();
   if (portfolioId) {
@@ -34,9 +38,30 @@ export const searchLiveStocks = async (query, limit = 10) => {
   return data;
 };
 
-export const fetchLiveStockBySymbol = async (symbol) => {
+export const fetchLiveStockBySymbol = async (symbol, options = {}) => {
   const queryParams = new URLSearchParams({ symbol });
+  if (options.period) {
+    queryParams.set("period", options.period);
+  }
+  if (options.interval) {
+    queryParams.set("interval", options.interval);
+  }
   const { data } = await api.get(`stocks/live-detail/?${queryParams.toString()}`);
+  return data;
+};
+
+export const fetchLiveStockComparison = async (symbolA, symbolB, options = {}) => {
+  const queryParams = new URLSearchParams({
+    symbol_a: symbolA,
+    symbol_b: symbolB,
+  });
+  if (options.period) {
+    queryParams.set("period", options.period);
+  }
+  if (options.interval) {
+    queryParams.set("interval", options.interval);
+  }
+  const { data } = await api.get(`stocks/live-compare/?${queryParams.toString()}`);
   return data;
 };
 
