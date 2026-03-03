@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 from datetime import datetime, timezone
-from math import sqrt
+from pathlib import Path
 
+import pandas as pd
 import yfinance as yf
 
 from analytics.services.opportunity_engine import opportunity_engine
@@ -11,6 +12,7 @@ from analytics.services.opportunity_engine import opportunity_engine
 
 ALLOWED_PERIODS = {"1mo", "3mo", "6mo", "1y", "2y", "3y", "5y", "10y", "max"}
 ALLOWED_INTERVALS = {"1d", "1wk", "1mo"}
+DATAFRAME_DIR = Path(__file__).resolve().parents[1] / "dataframes"
 
 
 def _discount_level(min_price: float, max_price: float, current_price: float) -> str:
@@ -43,6 +45,11 @@ def _infer_currency(symbol: str, reported_currency: str | None = None) -> str:
     return "USD"
 
 
+def _sanitize_symbol(symbol: str) -> str:
+    text = str(symbol or "").upper()
+    return "".join(ch if ch.isalnum() else "_" for ch in text).strip("_") or "UNKNOWN"
+
+
 def _extract_prices(history):
     if "Adj Close" in history.columns:
         series = history["Adj Close"].dropna()
@@ -53,26 +60,57 @@ def _extract_prices(history):
     return history.iloc[:, 0].dropna()
 
 
-def _compute_regression(points: list[dict[str, float]]) -> dict[str, float]:
-    n = len(points)
+def _compute_regression(df: pd.DataFrame, x_col: str = "x", y_col: str = "y") -> dict[str, float]:
+    frame = df[[x_col, y_col]].dropna()
+    n = len(frame)
     if n < 2:
         return {"slope": 0.0, "intercept": 0.0, "correlation": 0.0}
 
-    sum_x = sum(point["x"] for point in points)
-    sum_y = sum(point["y"] for point in points)
-    sum_xy = sum(point["x"] * point["y"] for point in points)
-    sum_x2 = sum(point["x"] * point["x"] for point in points)
-    sum_y2 = sum(point["y"] * point["y"] for point in points)
+    sum_x = float(frame[x_col].sum())
+    sum_y = float(frame[y_col].sum())
+    sum_xy = float((frame[x_col] * frame[y_col]).sum())
+    sum_x2 = float((frame[x_col] * frame[x_col]).sum())
+    sum_y2 = float((frame[y_col] * frame[y_col]).sum())
 
     denominator = (n * sum_x2) - (sum_x * sum_x)
     slope = 0.0 if denominator == 0 else ((n * sum_xy) - (sum_x * sum_y)) / denominator
     intercept = (sum_y - (slope * sum_x)) / n
 
     corr_numerator = (n * sum_xy) - (sum_x * sum_y)
-    corr_denominator = sqrt(((n * sum_x2) - (sum_x * sum_x)) * ((n * sum_y2) - (sum_y * sum_y)))
+    corr_denominator = (((n * sum_x2) - (sum_x * sum_x)) * ((n * sum_y2) - (sum_y * sum_y))) ** 0.5
     correlation = 0.0 if corr_denominator == 0 else corr_numerator / corr_denominator
 
     return {"slope": slope, "intercept": intercept, "correlation": correlation}
+
+
+def _aligned_price_frame(stock_a: dict[str, Any], stock_b: dict[str, Any]) -> pd.DataFrame:
+    frame_a = pd.DataFrame({"date": stock_a["dates"], "price_a": stock_a["prices"]})
+    frame_b = pd.DataFrame({"date": stock_b["dates"], "price_b": stock_b["prices"]})
+    merged = frame_a.merge(frame_b, on="date", how="inner").dropna(subset=["price_a", "price_b"])
+    if merged.empty:
+        return merged
+    return merged.sort_values("date").reset_index(drop=True)
+
+
+def _save_comparison_dataframes(
+    stock_a: dict[str, Any],
+    stock_b: dict[str, Any],
+    aligned_df: pd.DataFrame,
+    period: str,
+    interval: str,
+) -> None:
+    DATAFRAME_DIR.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    symbol_a = _sanitize_symbol(stock_a["symbol"])
+    symbol_b = _sanitize_symbol(stock_b["symbol"])
+    prefix = f"{symbol_a}_{symbol_b}_{period}_{interval}_{timestamp}"
+
+    stock_a_df = pd.DataFrame({"date": stock_a["dates"], "price": stock_a["prices"]})
+    stock_b_df = pd.DataFrame({"date": stock_b["dates"], "price": stock_b["prices"]})
+
+    stock_a_df.to_csv(DATAFRAME_DIR / f"{prefix}_stock_a.csv", index=False)
+    stock_b_df.to_csv(DATAFRAME_DIR / f"{prefix}_stock_b.csv", index=False)
+    aligned_df.to_csv(DATAFRAME_DIR / f"{prefix}_aligned.csv", index=False)
 
 
 def _fetch_ticker_payload(symbol: str, period: str, interval: str) -> dict[str, Any]:
@@ -231,10 +269,21 @@ def fetch_live_stock_detail(
             period=normalized_period,
             interval=normalized_interval,
         )
-        prices = payload["prices"]
-        current_price = payload["current_price"]
-        min_price = payload["min_price"]
-        max_price = payload["max_price"]
+        price_df = pd.DataFrame(
+            {
+                "date": payload["dates"],
+                "price": payload["prices"],
+                "moving_avg": payload["moving_avg"],
+            }
+        ).dropna(subset=["price"])
+        if price_df.empty:
+            return None
+
+        prices = [round(float(value), 4) for value in price_df["price"].tolist()]
+        moving_avg = [round(float(value), 4) for value in price_df["moving_avg"].tolist()]
+        current_price = float(price_df["price"].iloc[-1])
+        min_price = float(price_df["price"].min())
+        max_price = float(price_df["price"].max())
         discount_level = _discount_level(min_price=min_price, max_price=max_price, current_price=current_price)
         pe_ratio = payload["pe_ratio"]
         pe_value = pe_ratio if pe_ratio is not None else 0.0
@@ -258,9 +307,9 @@ def fetch_live_stock_detail(
                 "discount_level": discount_level,
                 "opportunity_score": opportunity_score,
                 "graph_data": {
-                    "dates": payload["dates"],
+                    "dates": [str(value) for value in price_df["date"].tolist()],
                     "price": prices,
-                    "moving_avg": payload["moving_avg"],
+                    "moving_avg": moving_avg,
                     "period": normalized_period,
                     "interval": normalized_interval,
                 },
@@ -295,34 +344,38 @@ def fetch_live_stock_comparison(
     except Exception as exc:
         raise RuntimeError("Unable to fetch stock data from Yahoo Finance.") from exc
 
-    aligned_dates = sorted(set(stock_a["price_map"].keys()).intersection(stock_b["price_map"].keys()))
-    historical = []
-    for date in aligned_dates:
-        price_a = stock_a["price_map"].get(date)
-        price_b = stock_b["price_map"].get(date)
-        if price_a is None or price_b is None:
-            continue
-        historical.append(
-            {
-                "date": date,
-                "price_a": round(float(price_a), 4),
-                "price_b": round(float(price_b), 4),
-            }
-        )
+    aligned_df = _aligned_price_frame(stock_a, stock_b)
+    _save_comparison_dataframes(
+        stock_a=stock_a,
+        stock_b=stock_b,
+        aligned_df=aligned_df,
+        period=normalized_period,
+        interval=normalized_interval,
+    )
+    historical = [
+        {
+            "date": str(row.date),
+            "price_a": round(float(row.price_a), 4),
+            "price_b": round(float(row.price_b), 4),
+        }
+        for row in aligned_df.itertuples(index=False)
+    ]
 
     if len(historical) < 2:
         raise ValueError("Not enough overlapping data to compare selected stocks.")
 
-    points = [{"x": row["price_a"], "y": row["price_b"], "date": row["date"]} for row in historical]
-    regression = _compute_regression(points)
+    points_df = aligned_df.rename(columns={"price_a": "x", "price_b": "y"})
+    regression = _compute_regression(points_df)
+    points = points_df[["date", "x", "y"]].copy()
+    points["y_fit"] = (regression["slope"] * points["x"]) + regression["intercept"]
     scatter = [
         {
-            "date": point["date"],
-            "x": point["x"],
-            "y": point["y"],
-            "y_fit": round((regression["slope"] * point["x"]) + regression["intercept"], 6),
+            "date": str(row.date),
+            "x": float(row.x),
+            "y": float(row.y),
+            "y_fit": round(float(row.y_fit), 6),
         }
-        for point in sorted(points, key=lambda item: item["x"])
+        for row in points.sort_values("x").itertuples(index=False)
     ]
 
     slope = regression["slope"]
