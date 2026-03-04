@@ -88,7 +88,7 @@ export default function LiveStockDetail() {
 
         <div className="card p-5 lg:col-span-2">
           <h2 className="text-lg font-semibold text-slate-900">Price Snapshot</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-4">
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
             <div className="rounded-lg border border-slate-200 p-4">
               <p className="text-xs uppercase tracking-wide text-slate-500">Current Price</p>
               <p className="mt-2 text-xl font-bold text-slate-900">{formatMoney(stock.current_price, currencyCode)}</p>
@@ -103,12 +103,6 @@ export default function LiveStockDetail() {
               <p className="text-xs uppercase tracking-wide text-slate-500">Max Price</p>
               <p className="mt-2 text-xl font-bold text-slate-900">
                 {formatMoney(stock.max_price, currencyCode)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-slate-200 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Today Price</p>
-              <p className="mt-2 text-xl font-bold text-slate-900">
-                {formatMoney(stock.today_price, currencyCode)}
               </p>
             </div>
           </div>

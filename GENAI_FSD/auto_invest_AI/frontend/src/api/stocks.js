@@ -69,3 +69,13 @@ export const fetchStockById = async (id) => {
   const { data } = await api.get(`stocks/${id}/`);
   return data;
 };
+
+export const fetchPortfolioClusters = async (portfolioId, nClusters = 3) => {
+  const queryParams = new URLSearchParams({
+    n_clusters: String(nClusters),
+  });
+  const { data } = await api.get(`portfolio/${portfolioId}/clusters/?${queryParams.toString()}`, {
+    timeout: 120000,
+  });
+  return data;
+};

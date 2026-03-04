@@ -15,6 +15,8 @@ from api.serializers import (
     StockListSerializer,
 )
 from analytics.services.pipeline import generate_and_persist_stock_analytics
+from analytics.services.cluster import build_portfolio_clusters
+from analytics.services.prediction import refresh_stock_prediction
 from analytics.services.yahoo_search import (
     fetch_live_stock_comparison,
     fetch_live_stock_detail,
@@ -108,11 +110,33 @@ class PortfolioViewSet(
             },
         )
         generate_and_persist_stock_analytics(stock)
+        refresh_stock_prediction(stock)
 
         return Response(
             StockListSerializer(stock).data,
             status=status.HTTP_201_CREATED,
         )
+
+    @action(detail=True, methods=["get"], url_path="clusters")
+    def clusters(self, request, pk=None):
+        portfolio = self.get_object()
+        try:
+            payload = build_portfolio_clusters(portfolio_id=portfolio.id)
+            if payload["status"] != "ok":
+                return Response(payload, status=status.HTTP_200_OK)
+            return Response(payload)
+        except Exception:
+            return Response(
+                {
+                    "portfolio_id": portfolio.id,
+                    "status": "error",
+                    "detail": "Failed to generate clustering analysis.",
+                    "rows": [],
+                    "cluster_summary": [],
+                    "centroids": [],
+                },
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
 
 class StockViewSet(viewsets.ReadOnlyModelViewSet):

@@ -38,6 +38,7 @@ export default function Stocks() {
   const [loading, setLoading] = useState(true);
   const [tableLoading, setTableLoading] = useState(false);
   const [error, setError] = useState("");
+  const [openingClusters, setOpeningClusters] = useState(false);
 
   const selectedPortfolio = useMemo(
     () => portfolios.find((item) => String(item.id) === String(portfolioId)) || null,
@@ -169,17 +170,34 @@ export default function Stocks() {
   };
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-10">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">
           {selectedPortfolio?.name || "Portfolio"} Stocks
         </h1>
-        <Link to="/portfolio" className="btn-secondary">
-          Back to Portfolio
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={openingClusters}
+            onClick={() => {
+              if (!portfolioId) {
+                navigate("/portfolio?notice=select-portfolio");
+                return;
+              }
+              setOpeningClusters(true);
+              navigate(`/portfolio/${portfolioId}/clusters`);
+            }}
+          >
+            {openingClusters ? "Opening..." : "Clustering Analysis"}
+          </button>
+          <Link to="/portfolio" className="btn-secondary">
+            Back to Portfolio
+          </Link>
+        </div>
       </div>
 
-      <div className="card p-5">
+      <div className="card p-6">
         <p className="mb-4 text-sm text-slate-600">
           {selectedPortfolio?.description || "Stocks for selected portfolio."}
         </p>
@@ -199,7 +217,7 @@ export default function Stocks() {
       ) : (
         <div className="space-y-6">
           {searchResults.length > 0 && (
-            <div className="card p-5">
+            <div className="card p-6">
               <h2 className="text-lg font-semibold text-slate-900">Search Results</h2>
               <div className="mt-4 overflow-x-auto">
                 <table className="min-w-full divide-y divide-slate-200">
@@ -247,7 +265,8 @@ export default function Stocks() {
 
           {stocks.length === 0 ? (
             <div className="card p-8 text-center text-sm text-slate-500">
-              No stocks in this portfolio yet. Use search above and add stocks.
+              <p className="font-semibold text-slate-700">Start building your portfolio</p>
+              <p className="mt-2">No stocks in this portfolio yet. Search above to add stocks.</p>
             </div>
           ) : (
             <>
@@ -256,12 +275,12 @@ export default function Stocks() {
             onDeleteStock={handleDeleteStock}
             deletingStockId={deletingStockId}
           />
-          <div className="card p-5">
+          <div className="card p-6">
             <h2 className="text-lg font-semibold text-slate-900">PE Ratio Comparison</h2>
             <div className="mt-4 h-80 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={peChartData} margin={{ top: 8, right: 20, left: 0, bottom: 8 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" strokeOpacity={0.7} />
                   <XAxis dataKey="symbol" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip />

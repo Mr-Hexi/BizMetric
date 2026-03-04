@@ -13,6 +13,7 @@ export default function Portfolio() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [openingClusterId, setOpeningClusterId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -66,8 +67,8 @@ export default function Portfolio() {
   };
 
   return (
-    <section className="space-y-6">
-      <div className="card p-5">
+    <section className="space-y-10">
+      <div className="card p-6">
         <h2 className="text-xl font-semibold text-slate-900">Create Portfolio</h2>
         <form onSubmit={handleCreatePortfolio} className="mt-4 grid gap-3 sm:grid-cols-3">
           <input
@@ -94,23 +95,53 @@ export default function Portfolio() {
         {message && <p className="mt-3 text-sm text-emerald-700">{message}</p>}
       </div>
 
-      <div className="card p-5">
-        <h1 className="text-2xl font-bold text-slate-900">Portfolios</h1>
-        <p className="mt-1 text-sm text-slate-600">Select a portfolio to open stocks page.</p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <div className="card p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Portfolios</h1>
+            <p className="mt-1 text-sm text-slate-600">
+              Choose a portfolio, then open Stocks or Clustering directly.
+            </p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-5 sm:grid-cols-2">
           {portfolios.map((portfolio) => (
-            <button
+            <div
               key={portfolio.id}
-              type="button"
+              className="portfolio-card"
+              role="button"
+              tabIndex={0}
               onClick={() => {
                 sessionStorage.setItem(ACTIVE_PORTFOLIO_KEY, String(portfolio.id));
                 navigate(`/stocks?portfolio=${portfolio.id}`);
               }}
-              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-brand-300 hover:bg-slate-50"
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  sessionStorage.setItem(ACTIVE_PORTFOLIO_KEY, String(portfolio.id));
+                  navigate(`/stocks?portfolio=${portfolio.id}`);
+                }
+              }}
             >
               <p className="text-sm font-semibold text-slate-900">{portfolio.name}</p>
-              <p className="mt-1 text-xs text-slate-600">{portfolio.description}</p>
-            </button>
+              <p className="mt-1 text-xs text-slate-600">
+                {portfolio.description || "No description"}
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={openingClusterId === portfolio.id}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setOpeningClusterId(portfolio.id);
+                    sessionStorage.setItem(ACTIVE_PORTFOLIO_KEY, String(portfolio.id));
+                    navigate(`/portfolio/${portfolio.id}/clusters`);
+                  }}
+                >
+                  {openingClusterId === portfolio.id ? "Opening..." : "Open Clustering"}
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -125,7 +156,7 @@ export default function Portfolio() {
         <div className="card p-8 text-center text-sm text-slate-500">No portfolios found.</div>
       ) : (
         <div className="card p-8 text-center text-sm text-slate-500">
-          Choose a portfolio card above to view its stocks.
+          Click any portfolio card to open Stocks. Use the card button to open Clustering directly.
         </div>
       )}
     </section>

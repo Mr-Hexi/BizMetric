@@ -1,0 +1,2 @@
+id,portfolio_id,symbol,company_name,sector,current_price,predicted_price_30d,expected_change_pct,direction_signal,model_confidence_r2,prediction_status,recommended_action,prediction_updated_at
+34,2,WIPRO.BO,WIPRO LTD.,Global,198.55,234.56,18.14,↑ Increase,0.08,ok,Buy Bias,2026-03-03 10:43:52.626187+00:00

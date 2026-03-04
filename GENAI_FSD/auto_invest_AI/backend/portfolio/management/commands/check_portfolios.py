@@ -8,3 +8,8 @@ class Command(BaseCommand):
         self.stdout.write("Portfolios:")
         for portfolio in Portfolio.objects.all():
             self.stdout.write(f" - {portfolio.name}")
+        self.stdout.write("Stocks in each portfolio:")        
+        for portfolio in Portfolio.objects.all():
+            self.stdout.write(f" - {portfolio.name}:")
+            for stock in portfolio.stocks.all():
+                self.stdout.write(f"   - {stock.company_name} ({stock.symbol})")

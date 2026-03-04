@@ -1,0 +1,5 @@
+id,portfolio_id,symbol,company_name,sector,current_price,predicted_price_30d,expected_change_pct,direction_signal,model_confidence_r2,prediction_status,recommended_action,prediction_updated_at
+23,1,TSLA,"Tesla, Inc.",Consumer Cyclical,402.51,502.32,24.55,↑ Increase,0.78,ok,Buy Bias,2026-03-03 10:17:12.002044+00:00
+24,1,INFY,Infosys Limited,Technology,14.44,16.63,17.22,↑ Increase,0.07,ok,Buy Bias,2026-03-03 10:17:13.309348+00:00
+27,1,005380.KS,HyundaiMtr,Global,604500.0,437973.18,-26.39,↓ Decrease,0.64,ok,Reduce Bias,2026-03-03 10:17:17.461098+00:00
+32,1,ASHOKLEY.NS,ASHOK LEYLAND LTD,Global,209.01,203.73,-2.52,↓ Decrease,0.89,ok,Reduce Bias,2026-03-03 10:17:22.320355+00:00

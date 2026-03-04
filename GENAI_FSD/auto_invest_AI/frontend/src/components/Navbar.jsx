@@ -17,10 +17,15 @@ export default function Navbar() {
     navigate("/login");
   };
 
-  const linkClass = (path) =>
-    `rounded-lg px-3 py-2 text-sm font-medium transition ${
-      location.pathname.startsWith(path)
-        ? "bg-brand-50 text-brand-700"
+  const isPortfolio = location.pathname === "/portfolio";
+  const isStocks = location.pathname.startsWith("/stocks");
+  const isCompare = location.pathname.startsWith("/compare");
+  const isClusters = location.pathname.includes("/clusters");
+
+  const linkClass = (active) =>
+    `relative rounded-lg px-3 py-2 text-sm font-semibold transition ${
+      active
+        ? "text-brand-700 after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 after:rounded-full after:bg-brand-600"
         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
     }`;
 
@@ -34,18 +39,25 @@ export default function Navbar() {
         <nav className="flex items-center gap-2 sm:gap-3">
           {isAuthenticated ? (
             <>
-              <Link to="/portfolio" className={linkClass("/portfolio")}>
+              <Link to="/portfolio" className={linkClass(isPortfolio)}>
                 Portfolio
               </Link>
               <Link
                 to={stocksPath}
-                className={`${linkClass("/stocks")} ${activePortfolioId ? "" : "opacity-70"}`}
+                className={`${linkClass(isStocks)} ${activePortfolioId ? "" : "opacity-70"}`}
                 title={activePortfolioId ? "Open active portfolio stocks" : "Select a portfolio first"}
               >
                 Stocks
               </Link>
-              <Link to="/compare" className={linkClass("/compare")}>
+              <Link to="/compare" className={linkClass(isCompare)}>
                 Compare Stocks
+              </Link>
+              <Link
+                to={activePortfolioId ? `/portfolio/${activePortfolioId}/clusters` : "/portfolio?notice=select-portfolio"}
+                className={linkClass(isClusters)}
+                title={activePortfolioId ? "Open portfolio clustering analysis" : "Select a portfolio first"}
+              >
+                Clusters
               </Link>
               <span className="hidden text-sm text-slate-600 sm:inline">{user?.username}</span>
               <button type="button" onClick={handleLogout} className="btn-secondary">

@@ -1,0 +1,7 @@
+id,portfolio_id,symbol,company_name,sector,current_price,predicted_price_30d,expected_change_pct,direction_signal,model_confidence_r2,prediction_status,recommended_action,prediction_updated_at
+22,3,TMCV.NS,TATA MOTORS LIMITED,Global,498.0,579.88,16.44,↑ Increase,0.95,ok,Buy Bias,2026-03-03 10:17:10.830848+00:00
+25,3,MSFT,Microsoft Corporation,Global,398.55,501.6,25.86,↑ Increase,0.12,ok,Buy Bias,2026-03-03 10:35:02.150444+00:00
+26,3,TM,Toyota Motor Corporation,Global,243.66,232.43,-4.61,↓ Decrease,0.71,ok,Reduce Bias,2026-03-03 10:17:15.939768+00:00
+29,3,MARUTI.BO,MARUTI SUZUKI INDIA LTD.,Global,14380.6,17601.41,22.4,↑ Increase,0.75,ok,Buy Bias,2026-03-03 10:17:18.551174+00:00
+31,3,BAJAJ-AUTO.NS,BAJAJ AUTO LIMITED,Global,9776.0,10016.52,2.46,↑ Increase,0.86,ok,Buy Bias,2026-03-03 10:17:20.073582+00:00
+33,3,7203.T,TOYOTA MOTOR CORP,Global,3702.0,3672.95,-0.78,↓ Decrease,0.78,ok,Hold/Watch,2026-03-03 10:17:23.558981+00:00
