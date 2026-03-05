@@ -82,6 +82,8 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+PREDICTIONS_ROOT = BASE_DIR / "predictions"
+PREDICTIONS_URL = "/predictions/"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {

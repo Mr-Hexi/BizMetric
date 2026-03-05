@@ -180,3 +180,10 @@ class PortfolioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Portfolio
         fields = ("id", "name", "description")
+
+
+class PredictionRunSerializer(serializers.Serializer):
+    stock_symbol = serializers.CharField(max_length=30)
+    model_type = serializers.ChoiceField(choices=["xgboost", "lstm"])
+    prediction_frequency = serializers.ChoiceField(choices=["hourly", "daily", "weekly", "monthly"])
+    historical_period = serializers.ChoiceField(choices=["6mo", "1y", "2y", "5y"])

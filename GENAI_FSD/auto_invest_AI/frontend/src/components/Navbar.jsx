@@ -21,6 +21,7 @@ export default function Navbar() {
   const isStocks = location.pathname.startsWith("/stocks");
   const isCompare = location.pathname.startsWith("/compare");
   const isClusters = location.pathname.includes("/clusters");
+  const isPrediction = location.pathname.startsWith("/prediction");
 
   const linkClass = (active) =>
     `relative rounded-lg px-3 py-2 text-sm font-semibold transition ${
@@ -51,6 +52,9 @@ export default function Navbar() {
               </Link>
               <Link to="/compare" className={linkClass(isCompare)}>
                 Compare Stocks
+              </Link>
+              <Link to="/prediction" className={linkClass(isPrediction)}>
+                Price Prediction
               </Link>
               <Link
                 to={activePortfolioId ? `/portfolio/${activePortfolioId}/clusters` : "/portfolio?notice=select-portfolio"}

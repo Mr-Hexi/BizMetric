@@ -9,6 +9,7 @@ import Stocks from "./pages/Stocks";
 import StockDetail from "./pages/StockDetail";
 import LiveStockDetail from "./pages/LiveStockDetail";
 import CompareStocks from "./pages/CompareStocks";
+import PricePrediction from "./pages/PricePrediction";
 
 export default function App() {
   const location = useLocation();
@@ -51,6 +52,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <CompareStocks />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/prediction"
+              element={
+                <ProtectedRoute>
+                  <PricePrediction />
                 </ProtectedRoute>
               }
             />

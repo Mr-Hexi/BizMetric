@@ -10,12 +10,14 @@ from api.serializers import (
     AddStockToPortfolioSerializer,
     LoginSerializer,
     PortfolioSerializer,
+    PredictionRunSerializer,
     RegisterSerializer,
     StockDetailSerializer,
     StockListSerializer,
 )
 from analytics.services.pipeline import generate_and_persist_stock_analytics
 from analytics.services.cluster import build_portfolio_clusters
+from analytics.services.price_prediction import get_prediction_options, run_prediction
 from analytics.services.prediction import refresh_stock_prediction
 from analytics.services.yahoo_search import (
     fetch_live_stock_comparison,
@@ -230,3 +232,34 @@ class StockViewSet(viewsets.ReadOnlyModelViewSet):
         stock = self.get_object()
         stock.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class PredictionViewSet(viewsets.GenericViewSet):
+    """Price prediction endpoints."""
+
+    def list(self, request):
+        payload = get_prediction_options()
+        return Response(payload, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post"], url_path="run")
+    def run(self, request):
+        serializer = PredictionRunSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            payload = run_prediction(
+                stock_symbol=serializer.validated_data["stock_symbol"],
+                model_type=serializer.validated_data["model_type"],
+                prediction_frequency=serializer.validated_data["prediction_frequency"],
+                historical_period=serializer.validated_data["historical_period"],
+                request=request,
+            )
+            return Response(payload, status=status.HTTP_200_OK)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        except RuntimeError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        except Exception:
+            return Response(
+                {"detail": "Failed to generate prediction. Please try again."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

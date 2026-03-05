@@ -17,6 +17,7 @@ Full-stack stock portfolio analytics platform with live market integration, pred
 - 30-day stock prediction (linear trend model)
 - Compare two stocks (historical, scatter, correlation, best-fit regression)
 - Portfolio risk-return clustering with K-Means
+- Price Prediction page (XGBoost/LSTM, historical period/frequency controls, plot outputs, request caching)
 - Dynamic currency display (USD/INR based on ticker/currency)
 
 ## Project Structure
@@ -28,6 +29,7 @@ auto_invest_AI/
 |   |   |-- services/
 |   |   |   |-- yahoo_search.py    # live search/detail/compare (yfinance)
 |   |   |   |-- prediction.py      # 30-day prediction + caching
+|   |   |   |-- price_prediction.py # XGBoost/LSTM prediction pipeline + plot generation
 |   |   |   |-- cluster.py         # risk-return clustering
 |   |   |   `-- pipeline.py        # analytics generation + persistence
 |   |-- portfolio/                 # Portfolio/Stock models
@@ -51,6 +53,10 @@ auto_invest_AI/
     `prediction_updated_at`
 - `StockAnalytics`
   - `stock` (OneToOne), `pe_ratio`, `discount_level`, `opportunity_score`, `graph_data`, `last_updated`
+- `PredictionResultCache`
+  - `stock_symbol`, `model_type`, `prediction_frequency`, `historical_period`, `generated_at`, `forecast_data`, `plots_path`
+- `PredictionModelState`
+  - `model_type`, `last_trained_at`
 
 ## Setup
 ### Prerequisites
@@ -62,6 +68,7 @@ auto_invest_AI/
 ```powershell
 cd backend
 conda run -n vibe-env pip install -r requirements.txt
+conda run -n vibe-env pip install -r requirements-prediction.txt
 conda run -n vibe-env python manage.py migrate
 conda run -n vibe-env python manage.py runserver
 ```
@@ -95,6 +102,10 @@ Backend default: `http://127.0.0.1:8000`
 - `GET /api/stocks/live-detail/?symbol={symbol}&period={period}&interval={interval}`
 - `GET /api/stocks/live-compare/?symbol_a={A}&symbol_b={B}&period={period}&interval={interval}`
 
+### Price Prediction
+- `GET /api/prediction/`
+- `POST /api/prediction/run/`
+
 ## Main Runtime Flows
 1. User logs in and receives token.
 2. User creates/selects portfolio.
@@ -113,9 +124,20 @@ Backend default: `http://127.0.0.1:8000`
 cd backend
 conda run -n vibe-env python manage.py run_analytics
 ```
+- Warm model outputs (for cron/celery scheduling):
+```powershell
+cd backend
+conda run -n vibe-env python manage.py run_prediction_maintenance --model xgboost --symbols AAPL TSLA BTC-USD
+conda run -n vibe-env python manage.py run_prediction_maintenance --model lstm --symbols AAPL TSLA BTC-USD
+```
 
 ## Notes
 - Predictions use a 1-year linear trend model and are informational only.
+- New prediction artifacts are saved under `/predictions/{stock}/{model}/`.
+- Cache policy: identical request signature returns cached data if generated in the last 24 hours.
+- Suggested scheduler cadence:
+  - XGBoost maintenance: every 24 hours
+  - LSTM maintenance: every 3 days
 - Caching is used to limit repeated API/model computation calls.
 - Clustering gracefully handles empty/insufficient data scenarios.
 

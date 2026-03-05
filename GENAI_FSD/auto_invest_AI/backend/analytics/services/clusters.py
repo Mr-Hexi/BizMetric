@@ -10,6 +10,24 @@ import pandas as pd
 from portfolio.models import Stock
 
 
+def _to_records_frame(rows: Any) -> pd.DataFrame:
+    """Build a DataFrame from row-like inputs without scalar constructor errors."""
+    if rows is None:
+        return pd.DataFrame()
+    if isinstance(rows, dict):
+        rows = [rows]
+    elif not isinstance(rows, list):
+        rows = list(rows)
+
+    normalized: list[dict[str, Any]] = []
+    for row in rows:
+        if isinstance(row, dict):
+            normalized.append(row)
+        else:
+            normalized.append({"value": row})
+    return pd.DataFrame.from_records(normalized)
+
+
 def export_portfolio_stocks_to_csv_and_json(
     portfolio_id: int,
     output_path: str | None = None,
@@ -34,7 +52,7 @@ def export_portfolio_stocks_to_csv_and_json(
         "prediction_updated_at",
     )
     rows = list(queryset)
-    df = pd.DataFrame(rows)
+    df = _to_records_frame(rows)
 
     if output_path:
         csv_path = Path(output_path)
