@@ -1,0 +1,58 @@
+{
+    "stock_selector":  "BTC-USD",
+    "historical_data_period":  "1 Year",
+    "model_selection":  "XGBoost",
+    "prediction_frequency":  "Daily",
+    "asset":  "btc-usd",
+    "model":  "xgboost",
+    "training_metrics":  {
+                             "mae":  14041.0181,
+                             "rmse":  15017.9306,
+                             "r2":  -5.9465,
+                             "feature_importance":  [
+                                                        {
+                                                            "feature":  "close",
+                                                            "importance":  0.8358862400054932
+                                                        },
+                                                        {
+                                                            "feature":  "sma_5",
+                                                            "importance":  0.15662449598312378
+                                                        },
+                                                        {
+                                                            "feature":  "sma_10",
+                                                            "importance":  0.004054554272443056
+                                                        },
+                                                        {
+                                                            "feature":  "ema_12",
+                                                            "importance":  0.001390590681694448
+                                                        },
+                                                        {
+                                                            "feature":  "sma_20",
+                                                            "importance":  0.0007345412159338593
+                                                        },
+                                                        {
+                                                            "feature":  "ema_26",
+                                                            "importance":  0.000730292871594429
+                                                        },
+                                                        {
+                                                            "feature":  "volatility_10",
+                                                            "importance":  0.00020951774786226451
+                                                        },
+                                                        {
+                                                            "feature":  "rsi_14",
+                                                            "importance":  0.00018954834376927465
+                                                        },
+                                                        {
+                                                            "feature":  "returns_1d",
+                                                            "importance":  0.00018024833116214722
+                                                        }
+                                                    ],
+                             "training_loss":  [
+
+                                               ],
+                             "validation_loss":  [
+
+                                                 ],
+                             "retrained_now":  false
+                         }
+}

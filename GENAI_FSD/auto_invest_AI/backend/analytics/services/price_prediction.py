@@ -139,6 +139,8 @@ def _validate_params(
         raise ValueError("Prediction frequency must be one of: hourly, daily, weekly, monthly.")
     if period not in HISTORICAL_PERIODS:
         raise ValueError("Historical period must be one of: 6mo, 1y, 2y, 5y.")
+    if frequency == "hourly" and period == "5y":
+        raise ValueError("Hourly prediction supports up to 2y. Choose 6mo, 1y, or 2y.")
     return symbol, model, frequency, period
 
 

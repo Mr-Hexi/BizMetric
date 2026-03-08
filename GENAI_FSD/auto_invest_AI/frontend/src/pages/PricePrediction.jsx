@@ -34,6 +34,22 @@ export default function PricePrediction() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
+  const filteredHistoricalPeriods = useMemo(() => {
+    const periods = options.historical_periods || [];
+    if (form.prediction_frequency !== "hourly") return periods;
+    return periods.filter((item) => item.value !== "5y");
+  }, [options.historical_periods, form.prediction_frequency]);
+
+  useEffect(() => {
+    if (form.prediction_frequency !== "hourly") return;
+    if (form.historical_period !== "5y") return;
+    const fallback = filteredHistoricalPeriods.find((item) => item.value === "2y")
+      || filteredHistoricalPeriods[0];
+    if (fallback) {
+      setForm((prev) => ({ ...prev, historical_period: fallback.value }));
+    }
+  }, [form.prediction_frequency, form.historical_period, filteredHistoricalPeriods]);
+
   useEffect(() => {
     const loadOptions = async () => {
       setLoadingOptions(true);
@@ -171,7 +187,7 @@ export default function PricePrediction() {
             disabled={loadingOptions || submitting}
             onChange={(e) => handleChange("historical_period", e.target.value)}
           >
-            {(options.historical_periods || []).map((item) => (
+            {filteredHistoricalPeriods.map((item) => (
               <option key={item.value} value={item.value}>
                 {item.label}
               </option>

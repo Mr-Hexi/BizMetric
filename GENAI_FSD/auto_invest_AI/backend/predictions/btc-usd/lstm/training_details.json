@@ -1,0 +1,33 @@
+{
+    "stock_selector":  "BTC-USD",
+    "historical_data_period":  "1 Year",
+    "model_selection":  "LSTM",
+    "prediction_frequency":  "Daily",
+    "asset":  "btc-usd",
+    "model":  "lstm",
+    "training_metrics":  {
+                             "mae":  960.1304,
+                             "rmse":  1165.8197,
+                             "r2":  0.6379,
+                             "feature_importance":  [
+
+                                                    ],
+                             "training_loss":  [
+                                                   0.018162455409765244,
+                                                   0.0013838252052664757,
+                                                   0.001156405545771122,
+                                                   0.0009846999309957027,
+                                                   0.0009060723823495209,
+                                                   0.0008455683710053563
+                                               ],
+                             "validation_loss":  [
+                                                     0.005697133019566536,
+                                                     0.0015457196859642863,
+                                                     0.0012633863370865583,
+                                                     0.001649254816584289,
+                                                     0.0018241399666294456,
+                                                     0.002080711768940091
+                                                 ],
+                             "retrained_now":  false
+                         }
+}

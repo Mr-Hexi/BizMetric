@@ -1,0 +1,10 @@
+Django>=5.0
+djangorestframework
+pandas
+numpy
+scikit-learn
+yfinance
+ta
+tensorflow
+mlflow
+joblib
