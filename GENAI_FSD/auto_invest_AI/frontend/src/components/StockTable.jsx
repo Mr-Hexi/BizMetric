@@ -29,7 +29,7 @@ export default function StockTable({ stocks, onDeleteStock, deletingStockId }) {
               <th className="sticky top-0 z-10 bg-slate-50 px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Current Price</th>
               <th className="sticky top-0 z-10 bg-slate-50 px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Min Price</th>
               <th className="sticky top-0 z-10 bg-slate-50 px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Max Price</th>
-              <th className="sticky top-0 z-10 bg-slate-50 px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Predicted (30D)</th>
+              <th className="sticky top-0 z-10 bg-slate-50 px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Predicted (1D)</th>
               <th className="sticky top-0 z-10 bg-slate-50 px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">% Change</th>
               <th className="sticky top-0 z-10 bg-slate-50 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">Signal</th>
               <th className="sticky top-0 z-10 bg-slate-50 px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Confidence (R2)</th>
@@ -68,7 +68,7 @@ export default function StockTable({ stocks, onDeleteStock, deletingStockId }) {
                 </td>
                 <td className="bg-indigo-50/55 px-4 py-3 text-right text-sm font-semibold text-indigo-900">
                   {stock.prediction_status === "ok"
-                    ? formatMoney(stock.predicted_price_30d, currencyCodeFromItem(stock))
+                    ? formatMoney(stock.predicted_price_1d, currencyCodeFromItem(stock))
                     : statusLabel(stock)}
                 </td>
                 <td

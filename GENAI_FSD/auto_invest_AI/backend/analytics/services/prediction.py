@@ -12,7 +12,7 @@ from sklearn.linear_model import LinearRegression
 CACHE_TTL_SECONDS = 60 * 60 * 24
 CHECK_TTL_SECONDS = 60 * 60 * 6
 MIN_DATA_POINTS = 60
-FUTURE_DAYS = 30
+FUTURE_DAYS = 1
 
 
 def _cache_key(symbol: str) -> str:
@@ -81,7 +81,7 @@ def _load_history_frame(symbol: str) -> pd.DataFrame:
 
 def _result_payload(
     status: str,
-    predicted_price_30d: float | None = None,
+    predicted_price_1d: float | None = None,
     expected_change_pct: float | None = None,
     direction_signal: str | None = None,
     model_confidence_r2: float | None = None,
@@ -89,7 +89,7 @@ def _result_payload(
 ) -> dict[str, Any]:
     return {
         "status": status,
-        "predicted_price_30d": predicted_price_30d,
+        "predicted_price_1d": predicted_price_1d,
         "expected_change_pct": expected_change_pct,
         "direction_signal": direction_signal,
         "model_confidence_r2": model_confidence_r2,
@@ -113,7 +113,7 @@ def _normalized_payload(payload: dict[str, Any]) -> dict[str, Any]:
     status = payload.get("status", "unavailable")
     expected_change = payload.get("expected_change_pct")
     return {
-        "predicted_price_30d": payload.get("predicted_price_30d"),
+        "predicted_price_1d": payload.get("predicted_price_1d"),
         "expected_change_pct": expected_change,
         "direction_signal": payload.get("direction_signal") or "",
         "model_confidence_r2": payload.get("model_confidence_r2"),
@@ -144,7 +144,7 @@ def _compute_prediction(symbol: str) -> dict[str, Any]:
 
         return _result_payload(
             status="ok",
-            predicted_price_30d=round(predicted_price, 2),
+            predicted_price_1d=round(predicted_price, 2),
             expected_change_pct=round(expected_change_pct, 2),
             direction_signal=direction_signal,
             model_confidence_r2=round(confidence, 2),

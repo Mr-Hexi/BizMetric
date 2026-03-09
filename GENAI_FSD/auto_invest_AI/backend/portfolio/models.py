@@ -26,7 +26,7 @@ class Stock(models.Model):
     company_name = models.CharField(max_length=255)
     sector = models.CharField(max_length=100)
     current_price = models.FloatField()
-    predicted_price_30d = models.FloatField(null=True, blank=True)
+    predicted_price_1d = models.FloatField(null=True, blank=True)
     expected_change_pct = models.FloatField(null=True, blank=True)
     direction_signal = models.CharField(max_length=30, blank=True, default="")
     model_confidence_r2 = models.FloatField(null=True, blank=True)

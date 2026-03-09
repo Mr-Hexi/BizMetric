@@ -6,7 +6,7 @@ const ProductCard = ({ product }) => {
             {product.image ? (
                 <div className="overflow-hidden rounded-xl mb-4 h-48">
                     <img
-                        src={`http://localhost:8000${product.image}`}
+                        src={product.image.startsWith('http') ? product.image : `http://localhost:8000${product.image}`}
                         alt={product.name}
                         className="object-cover w-full h-full transition-transform duration-500 hover:scale-110"
                     />

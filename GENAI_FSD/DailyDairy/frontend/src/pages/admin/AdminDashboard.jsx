@@ -9,7 +9,7 @@ const AdminDashboard = () => {
 
     // Quick Add States
     const [catName, setCatName] = useState('');
-    const [prodData, setProdData] = useState({ name: '', price: '', category: '', stock_quantity: '' });
+    const [prodData, setProdData] = useState({ name: '', price: '', category: '', stock_quantity: '', image: null });
 
     // Data States
     const [customers, setCustomers] = useState([]);
@@ -53,9 +53,22 @@ const AdminDashboard = () => {
     const handleAddProduct = async (e) => {
         e.preventDefault();
         try {
-            await axiosInstance.post('product/admin/', prodData);
+            const formData = new FormData();
+            formData.append('name', prodData.name);
+            formData.append('price', prodData.price);
+            formData.append('category', prodData.category);
+            formData.append('stock_quantity', prodData.stock_quantity);
+            if (prodData.image) {
+                formData.append('image', prodData.image);
+            }
+
+            await axiosInstance.post('product/admin/', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
             setMsg('Product added successfully!');
-            setProdData({ name: '', price: '', category: '', stock_quantity: '' });
+            setProdData({ name: '', price: '', category: '', stock_quantity: '', image: null });
         } catch (err) {
             setMsg('Failed to add product.');
         }
@@ -108,6 +121,15 @@ const AdminDashboard = () => {
                             <div>
                                 <label className="block mb-1 text-sm font-medium text-slate-700">Category ID</label>
                                 <input type="number" value={prodData.category} onChange={(e) => setProdData({ ...prodData, category: e.target.value })} className="w-full px-4 py-2 border rounded-xl" required />
+                            </div>
+                            <div>
+                                <label className="block mb-1 text-sm font-medium text-slate-700">Product Image</label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => setProdData({ ...prodData, image: e.target.files[0] })}
+                                    className="w-full px-4 py-2 border rounded-xl file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                />
                             </div>
                             <button type="submit" className="w-full py-2 font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700">Add Product</button>
                         </form>

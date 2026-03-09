@@ -14,7 +14,7 @@ Full-stack stock portfolio analytics platform with live market integration, pred
 - Add/remove stocks from portfolio
 - Live stock search and stock detail view
 - Stock analytics (PE ratio, discount level, opportunity score)
-- 30-day stock prediction (linear trend model)
+- 1-day stock prediction (linear trend model)
 - Compare two stocks (historical, scatter, correlation, best-fit regression)
 - Portfolio risk-return clustering with K-Means
 - Price Prediction page (XGBoost/LSTM, historical period/frequency controls, plot outputs, request caching)
@@ -28,7 +28,7 @@ auto_invest_AI/
 |   |-- analytics/
 |   |   |-- services/
 |   |   |   |-- yahoo_search.py    # live search/detail/compare (yfinance)
-|   |   |   |-- prediction.py      # 30-day prediction + caching
+|   |   |   |-- prediction.py      # 1-day prediction + caching
 |   |   |   |-- price_prediction.py # XGBoost/LSTM prediction pipeline + plot generation
 |   |   |   |-- cluster.py         # risk-return clustering
 |   |   |   `-- pipeline.py        # analytics generation + persistence
@@ -48,7 +48,7 @@ auto_invest_AI/
 - `Stock`
   - `portfolio`, `symbol`, `company_name`, `sector`, `current_price`
   - prediction fields:
-    `predicted_price_30d`, `expected_change_pct`, `direction_signal`,
+    `predicted_price_1d`, `expected_change_pct`, `direction_signal`,
     `model_confidence_r2`, `prediction_status`, `recommended_action`,
     `prediction_updated_at`
 - `StockAnalytics`

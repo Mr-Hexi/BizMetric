@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DB Stats</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+
+        .header-container {
+            padding: 50px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-bottom: 30px;
+            border-radius: 0 0 20px 20px;
+            text-align: center;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 28px 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+            text-align: center;
+            height: 100%;
+        }
+
+        .stat-value {
+            font-size: 2.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.1;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 8px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+            height: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+        }
+
+        .product-id {
+            font-size: 0.72rem;
+            color: #667eea;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .product-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 8px;
+        }
+
+        .product-doc {
+            font-size: 0.82rem;
+            color: #6c757d;
+            line-height: 1.5;
+            margin-bottom: 14px;
+        }
+
+        .badge-price {
+            background-color: #e9ecef;
+            color: #495057;
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .badge-category {
+            background-color: #ede9ff;
+            color: #667eea;
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .view-link {
+            font-size: 0.78rem;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .view-link:hover { text-decoration: underline; }
+
+        .back-btn {
+            color: white;
+            text-decoration: none;
+            font-size: 0.85rem;
+            opacity: 0.85;
+            transition: opacity 0.2s;
+        }
+        .back-btn:hover { opacity: 1; color: white; }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .refresh-btn:hover { opacity: 0.85; }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <div class="container">
+            <a href="/" class="back-btn">← Back to Search</a>
+            <h1 class="display-5 fw-bold mt-2 mb-1">Database Stats</h1>
+            <p class="mb-0 opacity-75">Overview of your ChromaDB vector database</p>
+        </div>
+    </div>
+
+    <div class="container mb-5">
+
+        <div id="loading" class="text-center py-5">
+            <div class="spinner-border" style="color:#667eea" role="status"></div>
+            <p class="text-muted mt-3">Loading database stats...</p>
+        </div>
+
+        <div id="error" class="alert alert-danger d-none">
+            ⚠️ Could not load stats. Make sure your Flask server is running and <code>/db-stats</code> is set up.
+        </div>
+
+        <div id="content" class="d-none">
+
+            <div class="row g-3 mb-4" id="stat-cards"></div>
+
+            <div class="mb-4">
+                <button class="refresh-btn" onclick="loadStats()">↻ Refresh</button>
+            </div>
+
+            <h5 class="fw-semibold mb-3" style="color:#343a40;">Sample Products</h5>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3" id="products-grid"></div>
+
+        </div>
+    </div>
+
+    <footer class="py-4 text-center text-muted" style="font-size:0.85rem;">
+        <p>Powered by ChromaDB & Flask</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        async function loadStats() {
+            document.getElementById('loading').classList.remove('d-none');
+            document.getElementById('content').classList.add('d-none');
+            document.getElementById('error').classList.add('d-none');
+
+            try {
+                const res = await fetch('/db-stats');
+                const data = await res.json();
+
+                document.getElementById('stat-cards').innerHTML = `
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="stat-value">${data.total_products}</div>
+                            <div class="stat-label">Total Products</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="stat-value" style="font-size:1.5rem;padding-top:12px">${data.collection_name}</div>
+                            <div class="stat-label">Collection Name</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="stat-value">${data.sample_products.length}</div>
+                            <div class="stat-label">Previewed Products</div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('products-grid').innerHTML = data.sample_products.map(p => `
+                    <div class="col">
+                        <div class="product-card">
+                            <div class="product-id"># ${p.id}</div>
+                            <div class="product-title">${p.metadata.title || 'Untitled Product'}</div>
+                            <div class="product-doc">${p.document}</div>
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                ${p.metadata.price ? `<span class="badge-price">€${p.metadata.price}</span>` : ''}
+                                ${p.metadata.category ? `<span class="badge-category">${p.metadata.category}</span>` : ''}
+                                ${p.metadata.url ? `<a href="${p.metadata.url}" target="_blank" class="view-link ms-auto">View Product ↗</a>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                document.getElementById('loading').classList.add('d-none');
+                document.getElementById('content').classList.remove('d-none');
+
+            } catch (err) {
+                document.getElementById('loading').classList.add('d-none');
+                document.getElementById('error').classList.remove('d-none');
+            }
+        }
+
+        loadStats();
+    </script>
+</body>
+</html>

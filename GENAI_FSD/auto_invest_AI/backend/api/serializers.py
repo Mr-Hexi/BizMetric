@@ -54,7 +54,7 @@ class StockListSerializer(serializers.ModelSerializer):
     max_price = serializers.SerializerMethodField()
     closing_price = serializers.SerializerMethodField()
     currency = serializers.SerializerMethodField()
-    predicted_price_30d = serializers.FloatField(read_only=True)
+    predicted_price_1d = serializers.FloatField(read_only=True)
     expected_change_pct = serializers.FloatField(read_only=True)
     direction_signal = serializers.CharField(read_only=True)
     model_confidence_r2 = serializers.FloatField(read_only=True)
@@ -72,7 +72,7 @@ class StockListSerializer(serializers.ModelSerializer):
             "max_price",
             "closing_price",
             "currency",
-            "predicted_price_30d",
+            "predicted_price_1d",
             "expected_change_pct",
             "direction_signal",
             "model_confidence_r2",
@@ -117,7 +117,7 @@ class StockDetailSerializer(serializers.ModelSerializer):
     max_price = serializers.SerializerMethodField()
     today_price = serializers.SerializerMethodField()
     currency = serializers.SerializerMethodField()
-    predicted_price_30d = serializers.FloatField(read_only=True)
+    predicted_price_1d = serializers.FloatField(read_only=True)
     expected_change_pct = serializers.FloatField(read_only=True)
     direction_signal = serializers.CharField(read_only=True)
     model_confidence_r2 = serializers.FloatField(read_only=True)
@@ -138,7 +138,7 @@ class StockDetailSerializer(serializers.ModelSerializer):
             "max_price",
             "today_price",
             "currency",
-            "predicted_price_30d",
+            "predicted_price_1d",
             "expected_change_pct",
             "direction_signal",
             "model_confidence_r2",

@@ -43,7 +43,7 @@ def export_portfolio_stocks_to_csv_and_json(
         "company_name",
         "sector",
         "current_price",
-        "predicted_price_30d",
+        "predicted_price_1d",
         "expected_change_pct",
         "direction_signal",
         "model_confidence_r2",

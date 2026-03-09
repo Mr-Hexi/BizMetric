@@ -67,7 +67,7 @@ const ProductDetails = () => {
                     {/* Product Image */}
                     <div className="lg:w-1/2">
                         {product.image ? (
-                            <img src={`http://localhost:8000${product.image}`} alt={product.name} className="object-cover w-full rounded-2xl shadow-sm h-96 lg:h-[500px]" />
+                            <img src={product.image.startsWith('http') ? product.image : `http://localhost:8000${product.image}`} alt={product.name} className="object-cover w-full rounded-2xl shadow-sm h-96 lg:h-[500px]" />
                         ) : (
                             <div className="flex items-center justify-center w-full bg-slate-100 rounded-2xl h-96 lg:h-[500px] text-slate-400 font-medium">
                                 No Image Available

@@ -109,7 +109,7 @@ export default function StockDetail() {
           </div>
 
           <div className="card p-6">
-            <h2 className="text-lg font-semibold text-slate-900">Prediction (30D)</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Prediction (1D)</h2>
             <p
               className="mt-1 text-xs text-slate-500"
               title="Prediction based on 1-year linear trend. For informational purposes only."
@@ -118,23 +118,22 @@ export default function StockDetail() {
             </p>
             <div className="mt-4 grid gap-4 sm:grid-cols-4">
               <div className="rounded-lg border border-slate-200 p-4">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Predicted (30D)</p>
+                <p className="text-xs uppercase tracking-wide text-slate-500">Predicted (1D)</p>
                 <p className="mt-2 text-xl font-bold text-slate-900">
                   {stock.prediction_status === "ok"
-                    ? formatMoney(stock.predicted_price_30d, currencyCode)
+                    ? formatMoney(stock.predicted_price_1d, currencyCode)
                     : predictionLabel}
                 </p>
               </div>
               <div className="rounded-lg border border-slate-200 p-4">
                 <p className="text-xs uppercase tracking-wide text-slate-500">% Change</p>
                 <p
-                  className={`mt-2 text-xl font-bold ${
-                    stock.prediction_status !== "ok"
-                      ? "text-slate-900"
-                      : Number(stock.expected_change_pct || 0) >= 0
-                        ? "text-emerald-700"
-                        : "text-rose-700"
-                  }`}
+                  className={`mt-2 text-xl font-bold ${stock.prediction_status !== "ok"
+                    ? "text-slate-900"
+                    : Number(stock.expected_change_pct || 0) >= 0
+                      ? "text-emerald-700"
+                      : "text-rose-700"
+                    }`}
                 >
                   {stock.prediction_status === "ok"
                     ? `${Number(stock.expected_change_pct || 0).toFixed(2)}%`
@@ -144,13 +143,12 @@ export default function StockDetail() {
               <div className="rounded-lg border border-slate-200 p-4">
                 <p className="text-xs uppercase tracking-wide text-slate-500">Signal</p>
                 <p
-                  className={`mt-2 text-xl font-bold ${
-                    stock.prediction_status !== "ok"
-                      ? "text-slate-900"
-                      : stock.direction_signal?.includes("Increase")
-                        ? "text-emerald-700"
-                        : "text-rose-700"
-                  }`}
+                  className={`mt-2 text-xl font-bold ${stock.prediction_status !== "ok"
+                    ? "text-slate-900"
+                    : stock.direction_signal?.includes("Increase")
+                      ? "text-emerald-700"
+                      : "text-rose-700"
+                    }`}
                 >
                   {stock.prediction_status === "ok" ? stock.direction_signal : predictionLabel}
                 </p>
